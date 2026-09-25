@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Django
+*.log
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# SQLite database
+*.sqlite3
+
+# Node
+node_modules/
+
+# Frontend build
+dist/
+
+# Environment variables
+.env
+.env.local

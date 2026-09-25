@@ -83,25 +83,24 @@ export async function getMe() {
 /* =========================
    GET PROFILE
 ========================= */
-export async function getProfile() {
+export const getProfile = async () => {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/auth/profile/`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json();
+  const response = await fetch(
+    "http://127.0.0.1:8000/api/auth/profile/",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
+    throw new Error("Failed to fetch profile");
   }
 
-  return data;
-}
+  return response.json();
+};
 
 /* =========================
    REFRESH ACCESS TOKEN
