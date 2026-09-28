@@ -133,3 +133,103 @@ export async function refreshAccessToken() {
 
   return data.access;
 }
+
+/* =========================
+   PRODUCT MANAGEMENT
+========================= */
+
+export async function getProducts() {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/products/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function getProduct(id) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/products/${id}/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function createProduct(productData) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/products/`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: productData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function updateProduct(id, productData) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/products/${id}/`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: productData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function deleteProduct(id) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/products/${id}/`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return true;
+}

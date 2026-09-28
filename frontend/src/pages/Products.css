@@ -389,3 +389,382 @@
     padding: 20px 15px;
   }
 }
+
+/* =========================
+   PRODUCT MANAGEMENT UI
+========================= */
+
+.products-error {
+  margin-bottom: 18px;
+  padding: 12px 15px;
+  border: 1px solid #f0caca;
+  border-radius: 9px;
+  background: #fff5f5;
+  color: #c23b3b;
+  font-size: 12px;
+}
+
+.products-loading {
+  min-height: 390px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #858b9a;
+  font-size: 13px;
+}
+
+
+/* PRODUCT TABLE */
+
+.products-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.products-table th {
+  padding: 14px 18px;
+  background: #fafbfc;
+  border-bottom: 1px solid #eceef3;
+  color: #7c8291;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.products-table td {
+  padding: 15px 18px;
+  border-bottom: 1px solid #f0f1f4;
+  color: #565c6b;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.products-table tbody tr:hover {
+  background: #fafaff;
+}
+
+.products-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+
+/* PRODUCT NAME */
+
+.product-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 190px;
+}
+
+.product-name-cell strong {
+  display: block;
+  color: #292d3a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.product-name-cell small {
+  display: block;
+  max-width: 180px;
+  margin-top: 4px;
+  overflow: hidden;
+  color: #969cab;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-image,
+.product-image-placeholder {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 9px;
+}
+
+.product-image {
+  object-fit: cover;
+  border: 1px solid #e7e9ef;
+}
+
+.product-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eeecff;
+  color: #5b4ee0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+
+/* STATUS */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 65px;
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.status-badge.active {
+  background: #eaf8ef;
+  color: #27834a;
+}
+
+.status-badge.inactive {
+  background: #f1f2f5;
+  color: #747986;
+}
+
+
+/* ACTIONS */
+
+.product-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.edit-btn,
+.delete-btn {
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.edit-btn {
+  border: 1px solid #dddaf8;
+  background: #f8f7ff;
+  color: #5d50d8;
+}
+
+.edit-btn:hover {
+  background: #efedff;
+}
+
+.delete-btn {
+  border: 1px solid #f0d0d0;
+  background: #fff7f7;
+  color: #c44848;
+}
+
+.delete-btn:hover {
+  background: #ffeded;
+}
+
+
+/* =========================
+   PRODUCT MODAL
+========================= */
+
+.product-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(30, 33, 45, 0.48);
+}
+
+.product-modal {
+  width: 100%;
+  max-width: 650px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 20px 60px rgba(30, 33, 45, 0.2);
+}
+
+.product-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 24px;
+  border-bottom: 1px solid #eceef3;
+}
+
+.product-modal-header h2 {
+  margin: 0;
+  color: #292d3a;
+  font-size: 18px;
+}
+
+.product-modal-header p {
+  margin: 5px 0 0;
+  color: #9298a8;
+  font-size: 11px;
+}
+
+.modal-close-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 7px;
+  background: #f5f6f8;
+  color: #73798a;
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-close-btn:hover {
+  background: #eceef3;
+}
+
+
+/* FORM */
+
+.product-form {
+  padding: 22px 24px 24px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 17px;
+}
+
+.form-group label {
+  margin-bottom: 7px;
+  color: #4e5361;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  border: 1px solid #dfe2e8;
+  border-radius: 8px;
+  outline: none;
+  background: white;
+  color: #303440;
+  font-family: inherit;
+  font-size: 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-group input,
+.form-group select {
+  height: 40px;
+  padding: 0 11px;
+}
+
+.form-group textarea {
+  min-height: 90px;
+  padding: 10px 11px;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #6b5de5;
+  box-shadow: 0 0 0 3px rgba(107, 93, 229, 0.08);
+}
+
+.form-group input[type="file"] {
+  height: auto;
+  padding: 9px;
+}
+
+.form-group small {
+  margin-top: 6px;
+  color: #9298a8;
+  font-size: 10px;
+}
+
+
+/* FORM BUTTONS */
+
+.product-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding-top: 5px;
+}
+
+.cancel-btn,
+.save-product-btn {
+  height: 40px;
+  padding: 0 17px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  border: 1px solid #e0e2e8;
+  background: white;
+  color: #686e7c;
+}
+
+.cancel-btn:hover {
+  background: #f7f8fa;
+}
+
+.save-product-btn {
+  border: none;
+  background: linear-gradient(135deg, #6b5de5, #584bd4);
+  color: white;
+  box-shadow: 0 6px 15px rgba(91, 78, 218, 0.18);
+}
+
+.save-product-btn:hover {
+  transform: translateY(-1px);
+}
+
+
+/* MOBILE MODAL */
+
+@media (max-width: 650px) {
+  .product-modal-overlay {
+    padding: 10px;
+  }
+
+  .product-modal-header,
+  .product-form {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .product-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancel-btn,
+  .save-product-btn {
+    width: 100%;
+  }
+}
