@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Inventory
+from .models import Inventory, InventoryHistory
 
 
 class InventorySerializer(serializers.ModelSerializer):
@@ -44,4 +44,33 @@ class InventorySerializer(serializers.ModelSerializer):
             'price',
             'status',
             'updated_at',
+        ]
+
+class InventoryHistorySerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(
+        source='inventory.product.name',
+        read_only=True
+    )
+
+    class Meta:
+        model = InventoryHistory
+        fields = [
+            'id',
+            'inventory',
+            'product_name',
+            'transaction_type',
+            'quantity',
+            'previous_quantity',
+            'new_quantity',
+            'created_at',
+        ]
+        read_only_fields = [
+            'id',
+            'inventory',
+            'product_name',
+            'transaction_type',
+            'quantity',
+            'previous_quantity',
+            'new_quantity',
+            'created_at',
         ]
