@@ -233,3 +233,91 @@ export async function deleteProduct(id) {
 
   return true;
 }
+
+/* =========================
+   INVENTORY MANAGEMENT
+========================= */
+
+export async function getInventory() {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/inventory/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function addStock(id, quantity) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/inventory/${id}/add-stock/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      quantity,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function reduceStock(id, quantity) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/inventory/${id}/reduce-stock/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      quantity,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function getInventoryHistory(id) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/inventory/${id}/history/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}

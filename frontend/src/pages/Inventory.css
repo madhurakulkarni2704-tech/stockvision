@@ -516,6 +516,59 @@
 
 
 /* ================================
+   TABLE ROWS
+================================ */
+
+.inventory-table-body {
+  width: 100%;
+}
+
+.inventory-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  padding: 17px 23px;
+  border-bottom: 1px solid #f0f1f4;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.inventory-table-row:hover {
+  background: #fafaff;
+}
+
+.inventory-table-row:last-child {
+  border-bottom: none;
+}
+
+.inventory-table-row span {
+  color: #4d5362;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.inventory-table-row span:first-child {
+  color: #252938;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inventory-table-row span:nth-child(3) {
+  font-weight: 700;
+}
+
+.inventory-table-row span:nth-child(4) {
+  font-weight: 600;
+}
+
+.inventory-table-row span:last-child {
+  font-weight: 600;
+}
+
+
+/* ================================
    EMPTY STATE
 ================================ */
 
@@ -566,6 +619,184 @@
 
 .inventory-empty-btn:hover {
   background: #efedff;
+}
+
+
+/* ================================
+   INVENTORY UPDATE PANEL
+================================ */
+
+.inventory-update-panel {
+  margin: 18px 23px;
+  padding: 20px;
+  border: 1px solid #e5e2ff;
+  border-radius: 12px;
+  background: #faf9ff;
+}
+
+.inventory-update-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.inventory-update-header h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #252938;
+}
+
+.inventory-update-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e1e2e8;
+  border-radius: 8px;
+  background: white;
+  color: #6d7280;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.inventory-update-close:hover {
+  background: #f4f3ff;
+  color: #5b4ee0;
+}
+
+.inventory-current-stock {
+  margin-bottom: 16px;
+  color: #73798a;
+  font-size: 12px;
+}
+
+.inventory-current-stock strong {
+  color: #252938;
+}
+
+.inventory-action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.inventory-action-btn {
+  height: 38px;
+  padding: 0 15px;
+  border: 1px solid #dddfe7;
+  border-radius: 8px;
+  background: white;
+  color: #666d7d;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inventory-action-btn:hover {
+  background: #f6f5ff;
+}
+
+.inventory-action-btn.active {
+  border-color: #6b5de5;
+  background: #eeecff;
+  color: #5b4ee0;
+}
+
+.inventory-quantity-input {
+  width: 100%;
+  height: 42px;
+  border: 1px solid #dfe1e8;
+  border-radius: 8px;
+  background: white;
+  padding: 0 12px;
+  outline: none;
+  font-size: 12px;
+}
+
+.inventory-quantity-input:focus {
+  border-color: #6b5de5;
+  box-shadow: 0 0 0 3px rgba(107, 93, 229, 0.08);
+}
+
+.inventory-submit-btn {
+  width: 100%;
+  height: 42px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(
+    135deg,
+    #6b5de5,
+    #584bd4
+  );
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inventory-submit-btn:hover {
+  transform: translateY(-1px);
+}
+
+
+/* ================================
+   HISTORY
+================================ */
+
+.inventory-history {
+  margin: 18px 23px 23px;
+  padding: 18px;
+  border: 1px solid #e7e9ef;
+  border-radius: 11px;
+  background: #fafbfc;
+}
+
+.inventory-history h3 {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #252938;
+}
+
+.inventory-history-entry {
+  padding: 11px 0;
+  border-bottom: 1px solid #e7e9ef;
+  color: #656b7a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.inventory-history-entry:first-of-type {
+  padding-top: 0;
+}
+
+.inventory-history-entry:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.inventory-history-entry strong {
+  color: #4d5362;
+}
+
+.inventory-history-entry div {
+  margin-top: 3px;
+  color: #979dac;
+  font-size: 9px;
+}
+
+
+/* ================================
+   ERROR MESSAGE
+================================ */
+
+.inventory-error {
+  margin-bottom: 15px;
+  padding: 11px 14px;
+  border: 1px solid #f0cccc;
+  border-radius: 8px;
+  background: #fff5f5;
+  color: #b23b3b;
+  font-size: 11px;
 }
 
 
@@ -689,8 +920,23 @@
     grid-template-columns: 2fr 1fr 1fr;
   }
 
+  .inventory-table-row {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+
   .inventory-table-header span:nth-child(4),
   .inventory-table-header span:nth-child(5) {
     display: none;
+  }
+
+  .inventory-table-row span:nth-child(4),
+  .inventory-table-row span:nth-child(5) {
+    display: none;
+  }
+
+  .inventory-update-panel,
+  .inventory-history {
+    margin-left: 15px;
+    margin-right: 15px;
   }
 }
