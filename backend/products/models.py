@@ -42,6 +42,11 @@ class Product(models.Model):
         blank=True
     )
 
+    expiry_date = models.DateField(
+    null=True,
+    blank=True
+    )   
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
