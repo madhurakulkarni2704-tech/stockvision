@@ -321,3 +321,83 @@ export async function getInventoryHistory(id) {
 
   return data;
 }
+
+/* =========================
+   EXPIRY MONITORING
+========================= */
+
+export async function getExpiryProducts() {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/expiry/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function getExpiringSoonProducts() {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/expiry/expiring-soon/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function getExpiredProducts() {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/expiry/expired/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function getSafeProducts() {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/expiry/safe/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}

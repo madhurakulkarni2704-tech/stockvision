@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Inventory from "./pages/Inventory";
+import Expiry from "./pages/Expiry";
 import Profile from "./pages/Profile";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -52,14 +53,25 @@ function App() {
           }
         />
 
+        {/* Protected Inventory */}
         <Route
-  path="/inventory"
-  element={
-    <ProtectedRoute>
-      <Inventory />
-    </ProtectedRoute>
-  }
-/>
+          path="/inventory"
+          element={
+            <ProtectedRoute>
+              <Inventory />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Expiry Monitoring */}
+        <Route
+          path="/expiry"
+          element={
+            <ProtectedRoute>
+              <Expiry />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Protected Profile */}
         <Route

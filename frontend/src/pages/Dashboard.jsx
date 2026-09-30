@@ -67,7 +67,7 @@ function Dashboard() {
   return (
     <div className="dashboard-page">
 
-      {/* ================= SIDEBAR ================= */}
+      {/* SIDEBAR */}
 
       <aside className="dashboard-sidebar">
 
@@ -88,7 +88,7 @@ function Dashboard() {
             className="sidebar-nav-item active"
             onClick={() => navigate("/dashboard")}
           >
-            <span className="sidebar-icon">⌂</span>
+            <span className="sidebar-icon">D</span>
             <span>Dashboard</span>
           </button>
 
@@ -96,7 +96,7 @@ function Dashboard() {
             className="sidebar-nav-item"
             onClick={() => navigate("/products")}
           >
-            <span className="sidebar-icon">▣</span>
+            <span className="sidebar-icon">P</span>
             <span>Products</span>
           </button>
 
@@ -104,15 +104,23 @@ function Dashboard() {
             className="sidebar-nav-item"
             onClick={() => navigate("/inventory")}
           >
-            <span className="sidebar-icon">▤</span>
+            <span className="sidebar-icon">I</span>
             <span>Inventory</span>
+          </button>
+
+          <button
+            className="sidebar-nav-item"
+            onClick={() => navigate("/expiry")}
+          >
+            <span className="sidebar-icon">E</span>
+            <span>Expiry</span>
           </button>
 
           <button
             className="sidebar-nav-item"
             onClick={() => navigate("/profile")}
           >
-            <span className="sidebar-icon">♙</span>
+            <span className="sidebar-icon">U</span>
             <span>Profile</span>
           </button>
 
@@ -128,7 +136,7 @@ function Dashboard() {
             <div className="promo-box box-three"></div>
 
             <div className="promo-chart">
-              ▂▅▇
+              STOCK
             </div>
           </div>
 
@@ -155,22 +163,22 @@ function Dashboard() {
       </aside>
 
 
-      {/* ================= MAIN AREA ================= */}
+      {/* MAIN AREA */}
 
       <div className="dashboard-main">
 
-        {/* ================= TOP HEADER ================= */}
+        {/* TOP HEADER */}
 
         <header className="dashboard-header">
 
           <div className="header-left">
 
             <button className="menu-button">
-              ☰
+              MENU
             </button>
 
             <div className="search-box">
-              <span>⌕</span>
+              <span>Search</span>
 
               <input
                 type="text"
@@ -180,11 +188,10 @@ function Dashboard() {
 
           </div>
 
-
           <div className="header-right">
 
             <button className="notification-button">
-              ♧
+              Alerts
               <span className="notification-dot"></span>
             </button>
 
@@ -198,13 +205,11 @@ function Dashboard() {
 
               <div className="header-user-info">
                 <strong>{username}</strong>
-                <span>
-                  {role}
-                </span>
+                <span>{role}</span>
               </div>
 
               <span className="header-arrow">
-                ▾
+                &gt;
               </span>
 
             </div>
@@ -213,7 +218,6 @@ function Dashboard() {
               className="header-logout"
               onClick={handleLogout}
             >
-              <span>↪</span>
               Logout
             </button>
 
@@ -222,7 +226,7 @@ function Dashboard() {
         </header>
 
 
-        {/* ================= CONTENT ================= */}
+        {/* CONTENT */}
 
         <main className="dashboard-content">
 
@@ -237,8 +241,7 @@ function Dashboard() {
               </span>
 
               <h1>
-                Welcome back,{" "}
-                <span>{username}!</span> 👋
+                Welcome back, <span>{username}!</span>
               </h1>
 
               <p>
@@ -248,24 +251,21 @@ function Dashboard() {
             </div>
 
             <div className="role-badge">
-
               <span className="role-dot"></span>
-
               {role}
-
             </div>
 
           </section>
 
 
-          {/* ================= STAT CARDS ================= */}
+          {/* STAT CARDS */}
 
           <section className="dashboard-stats">
 
             <div className="stat-card">
 
               <div className="stat-icon purple">
-                📦
+                P
               </div>
 
               <div>
@@ -280,7 +280,7 @@ function Dashboard() {
             <div className="stat-card">
 
               <div className="stat-icon blue">
-                📊
+                I
               </div>
 
               <div>
@@ -295,7 +295,7 @@ function Dashboard() {
             <div className="stat-card">
 
               <div className="stat-icon orange">
-                ⚠
+                !
               </div>
 
               <div>
@@ -310,7 +310,7 @@ function Dashboard() {
             <div className="stat-card">
 
               <div className="stat-icon green">
-                ✓
+                OK
               </div>
 
               <div>
@@ -324,7 +324,7 @@ function Dashboard() {
           </section>
 
 
-          {/* ================= MAIN GRID ================= */}
+          {/* MAIN GRID */}
 
           <section className="dashboard-grid">
 
@@ -339,7 +339,7 @@ function Dashboard() {
                   <div className="panel-title-row">
 
                     <span className="panel-icon">
-                      📈
+                      DATA
                     </span>
 
                     <h2>
@@ -356,7 +356,7 @@ function Dashboard() {
 
                 <button className="period-button">
                   Last 7 days
-                  <span>⌄</span>
+                  <span>DATE</span>
                 </button>
 
               </div>
@@ -367,7 +367,7 @@ function Dashboard() {
                 <div className="chart-placeholder">
 
                   <div className="chart-circle">
-                    📊
+                    DATA
                   </div>
 
                   <h3>
@@ -397,7 +397,7 @@ function Dashboard() {
                   <div className="panel-title-row">
 
                     <span className="panel-icon">
-                      ⚡
+                      GO
                     </span>
 
                     <h2>
@@ -423,7 +423,7 @@ function Dashboard() {
                 >
 
                   <div className="quick-icon purple-bg">
-                    📦
+                    P
                   </div>
 
                   <div>
@@ -431,7 +431,7 @@ function Dashboard() {
                     <span>Manage your products</span>
                   </div>
 
-                  <b>→</b>
+                  <b>&gt;</b>
 
                 </button>
 
@@ -442,7 +442,7 @@ function Dashboard() {
                 >
 
                   <div className="quick-icon blue-bg">
-                    📊
+                    I
                   </div>
 
                   <div>
@@ -450,7 +450,26 @@ function Dashboard() {
                     <span>Monitor stock levels</span>
                   </div>
 
-                  <b>→</b>
+                  <b>&gt;</b>
+
+                </button>
+
+
+                <button
+                  className="quick-action"
+                  onClick={() => navigate("/expiry")}
+                >
+
+                  <div className="quick-icon orange-bg">
+                    E
+                  </div>
+
+                  <div>
+                    <strong>Expiry</strong>
+                    <span>Monitor product expiry</span>
+                  </div>
+
+                  <b>&gt;</b>
 
                 </button>
 
@@ -461,7 +480,7 @@ function Dashboard() {
                 >
 
                   <div className="quick-icon green-bg">
-                    👤
+                    U
                   </div>
 
                   <div>
@@ -469,7 +488,7 @@ function Dashboard() {
                     <span>View account details</span>
                   </div>
 
-                  <b>→</b>
+                  <b>&gt;</b>
 
                 </button>
 
@@ -480,14 +499,13 @@ function Dashboard() {
           </section>
 
 
-          {/* ================= ACCOUNT BANNER ================= */}
+          {/* ACCOUNT BANNER */}
 
           <section className="account-banner">
 
             <div className="account-avatar">
               {username.charAt(0).toUpperCase()}
             </div>
-
 
             <div className="account-info">
 
@@ -501,7 +519,6 @@ function Dashboard() {
 
             </div>
 
-
             <div className="account-role">
 
               <span>
@@ -514,12 +531,11 @@ function Dashboard() {
 
             </div>
 
-
             <button
               className="view-profile-button"
               onClick={() => navigate("/profile")}
             >
-              View Profile →
+              View Profile &gt;
             </button>
 
           </section>
