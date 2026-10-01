@@ -25,6 +25,8 @@ urlpatterns = [
 
     # Expiry Monitoring APIs
     path('api/expiry/', include('expiry.urls')),
+
+    path("api/alerts/", include("alerts.urls")),
 ]
 
 
