@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getMe, getProfile, logoutUser } from "../services/api";
+import {
+  getAlerts,
+  getMe,
+  getProfile,
+  logoutUser,
+} from "../services/api";
 import "./Dashboard.css";
 
 function Dashboard() {
@@ -8,6 +13,7 @@ function Dashboard() {
 
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -19,6 +25,17 @@ function Dashboard() {
 
         setUser(userData);
         setProfile(profileData);
+
+        try {
+          const unreadData = await getAlerts({
+            read: "false",
+          });
+
+          setUnreadAlerts(unreadData.length);
+        } catch (alertError) {
+          console.error("Unable to load alerts:", alertError);
+          setUnreadAlerts(0);
+        }
       } catch (err) {
         console.error(err);
         setError("Unable to load your profile.");
@@ -118,6 +135,20 @@ function Dashboard() {
 
           <button
             className="sidebar-nav-item"
+            onClick={() => navigate("/alerts")}
+          >
+            <span className="sidebar-icon">A</span>
+            <span>Alerts</span>
+
+            {unreadAlerts > 0 && (
+              <span className="sidebar-alert-badge">
+                {unreadAlerts}
+              </span>
+            )}
+          </button>
+
+          <button
+            className="sidebar-nav-item"
             onClick={() => navigate("/profile")}
           >
             <span className="sidebar-icon">U</span>
@@ -190,9 +221,21 @@ function Dashboard() {
 
           <div className="header-right">
 
-            <button className="notification-button">
+            <button
+              className="notification-button"
+              onClick={() => navigate("/alerts")}
+            >
               Alerts
-              <span className="notification-dot"></span>
+
+              {unreadAlerts > 0 && (
+                <span className="notification-badge">
+                  {unreadAlerts}
+                </span>
+              )}
+
+              {unreadAlerts > 0 && (
+                <span className="notification-dot"></span>
+              )}
             </button>
 
             <div className="header-divider"></div>
@@ -467,6 +510,29 @@ function Dashboard() {
                   <div>
                     <strong>Expiry</strong>
                     <span>Monitor product expiry</span>
+                  </div>
+
+                  <b>&gt;</b>
+
+                </button>
+
+
+                <button
+                  className="quick-action"
+                  onClick={() => navigate("/alerts")}
+                >
+
+                  <div className="quick-icon orange-bg">
+                    A
+                  </div>
+
+                  <div>
+                    <strong>Alerts</strong>
+                    <span>
+                      {unreadAlerts > 0
+                        ? `${unreadAlerts} unread alert${unreadAlerts === 1 ? "" : "s"}`
+                        : "View notifications"}
+                    </span>
                   </div>
 
                   <b>&gt;</b>

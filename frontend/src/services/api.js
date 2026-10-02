@@ -401,3 +401,83 @@ export async function getSafeProducts() {
 
   return data;
 }
+
+/* =========================
+   ALERTS & NOTIFICATIONS
+========================= */
+
+export async function getAlerts(filters = {}) {
+  const token = localStorage.getItem("access");
+
+  const params = new URLSearchParams();
+
+  if (filters.read) {
+    params.append("read", filters.read);
+  }
+
+  if (filters.type) {
+    params.append("type", filters.type);
+  }
+
+  const queryString = params.toString();
+  const url = `${API_URL}/alerts/${queryString ? `?${queryString}` : ""}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function markAlertAsRead(id) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/alerts/${id}/read/`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function dismissAlert(id) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/alerts/${id}/`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok && response.status !== 204) {
+    let data = {};
+
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
+    throw new Error(data.detail || "Failed to dismiss alert");
+  }
+
+  return true;
+}

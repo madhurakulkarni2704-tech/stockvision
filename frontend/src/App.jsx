@@ -8,6 +8,7 @@ import Inventory from "./pages/Inventory";
 import Expiry from "./pages/Expiry";
 import Profile from "./pages/Profile";
 import ProtectedRoute from "./ProtectedRoute";
+import Alerts from "./pages/Alerts";
 
 import "./App.css";
 
@@ -69,6 +70,16 @@ function App() {
           element={
             <ProtectedRoute>
               <Expiry />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Alerts */}
+        <Route
+          path="/alerts"
+          element={
+            <ProtectedRoute>
+              <Alerts />
             </ProtectedRoute>
           }
         />

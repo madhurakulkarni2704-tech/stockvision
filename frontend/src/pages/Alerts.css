@@ -1,0 +1,738 @@
+/* =========================================================
+   STOCKVISION - ALERTS PAGE
+========================================================= */
+
+.alerts-page {
+  width: 100%;
+  min-height: 100vh;
+  background: #f7f8fc;
+  box-sizing: border-box;
+}
+
+.alerts-page *,
+.alerts-page *::before,
+.alerts-page *::after {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   MAIN CONTAINER
+========================================================= */
+
+.alerts-container {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 42px 40px 60px;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.alerts-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.alerts-header > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.alerts-label {
+  display: block;
+  margin-bottom: 8px;
+
+  color: #7c3aed;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.alerts-header h1 {
+  margin: 0;
+
+  color: #111827;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.alerts-header p {
+  margin: 8px 0 0;
+
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   UNREAD SUMMARY
+========================================================= */
+
+.alerts-summary {
+  min-width: 105px;
+  height: 76px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+}
+
+.alerts-summary strong {
+  color: #111827;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.alerts-summary span {
+  margin-top: 6px;
+
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   CONTROLS
+========================================================= */
+
+.alerts-controls {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+/* =========================================================
+   ALERT TYPE FILTERS
+========================================================= */
+
+.alert-type-filters {
+  width: 100%;
+
+  display: grid;
+  grid-template-columns:
+    minmax(70px, 0.7fr)
+    minmax(110px, 1fr)
+    minmax(125px, 1.1fr)
+    minmax(135px, 1.15fr)
+    minmax(105px, 0.9fr)
+    minmax(150px, 1.2fr);
+
+  gap: 7px;
+
+  padding: 6px;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 11px;
+
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.alert-filter-button {
+  width: 100%;
+  min-height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 7px;
+
+  background: transparent;
+  color: #6b7280;
+
+  padding: 9px 8px;
+
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.alert-filter-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.alert-filter-button.active {
+  background: #111827;
+  color: #ffffff;
+}
+
+/* =========================================================
+   READ FILTER
+========================================================= */
+
+.alert-read-filter {
+  align-self: flex-end;
+
+  display: inline-flex;
+  align-items: center;
+
+  padding: 4px;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.03);
+}
+
+.alert-read-filter button {
+  min-width: 78px;
+  height: 34px;
+
+  border: none;
+  border-radius: 6px;
+
+  background: transparent;
+  color: #6b7280;
+
+  padding: 0 15px;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.alert-read-filter button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.alert-read-filter button.active {
+  background: #111827;
+  color: #ffffff;
+}
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.alerts-error {
+  width: 100%;
+  margin-bottom: 18px;
+
+  padding: 13px 16px;
+
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 9px;
+
+  color: #be123c;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* =========================================================
+   LOADING / EMPTY STATES
+========================================================= */
+
+.alerts-state,
+.alerts-empty {
+  width: 100%;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  text-align: center;
+
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.alerts-state {
+  padding: 50px 20px;
+
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.alerts-empty {
+  padding: 65px 25px;
+}
+
+.alerts-empty-icon {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto 15px;
+
+  border-radius: 50%;
+
+  background: #ecfdf5;
+  color: #059669;
+
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.alerts-empty h2 {
+  margin: 0;
+
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.alerts-empty p {
+  margin: 8px 0 0;
+
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* =========================================================
+   ALERT LIST
+========================================================= */
+
+.alerts-list {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* =========================================================
+   ALERT CARD
+========================================================= */
+
+.alert-card {
+  width: 100%;
+  min-height: 112px;
+
+  display: grid;
+
+  /*
+     Fixed structure:
+     1. indicator
+     2. content
+     3. actions
+  */
+  grid-template-columns: 5px minmax(0, 1fr) 170px;
+
+  align-items: center;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  overflow: hidden;
+
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.alert-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 5px 15px rgba(15, 23, 42, 0.06);
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   LEFT INDICATOR
+========================================================= */
+
+.alert-card-indicator {
+  width: 5px;
+  height: 100%;
+
+  align-self: stretch;
+
+  background: #d1d5db;
+}
+
+.alert-card.unread .alert-card-indicator {
+  background: #ef4444;
+}
+
+.alert-card.read .alert-card-indicator {
+  background: #d1d5db;
+}
+
+/* =========================================================
+   CARD CONTENT
+========================================================= */
+
+.alert-card-content {
+  width: 100%;
+  min-width: 0;
+
+  padding: 19px 24px;
+}
+
+.alert-card-top {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  gap: 8px;
+
+  margin-bottom: 9px;
+}
+
+.alert-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 24px;
+
+  padding: 5px 9px;
+
+  background: #f3f4f6;
+  color: #4b5563;
+
+  border-radius: 6px;
+
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.alert-card.unread .alert-type {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 24px;
+
+  padding: 5px 8px;
+
+  background: #fef3c7;
+  color: #92400e;
+
+  border-radius: 6px;
+
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   PRODUCT NAME
+========================================================= */
+
+.alert-card-content h3 {
+  width: 100%;
+
+  margin: 0 0 5px;
+
+  color: #111827;
+
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 700;
+
+  text-align: left;
+}
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+.alert-card-content p {
+  width: 100%;
+
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+  line-height: 1.5;
+
+  text-align: left;
+}
+
+/* =========================================================
+   SKU
+========================================================= */
+
+.alert-product-sku {
+  display: block;
+
+  margin-top: 8px;
+
+  color: #9ca3af;
+
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 500;
+
+  text-align: left;
+}
+
+/* =========================================================
+   ACTION AREA
+========================================================= */
+
+.alert-card-actions {
+  width: 170px;
+
+  min-height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 18px 20px;
+
+  border-left: 1px solid #f0f1f3;
+}
+
+/* =========================================================
+   READ BUTTON
+========================================================= */
+
+.alert-read-button,
+.alert-dismiss-button {
+  width: 100%;
+  min-height: 35px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 8px 10px;
+
+  border-radius: 7px;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.alert-read-button {
+  background: #111827;
+  border: 1px solid #111827;
+  color: #ffffff;
+}
+
+.alert-read-button:hover {
+  background: #374151;
+  border-color: #374151;
+}
+
+/* =========================================================
+   DISMISS BUTTON
+========================================================= */
+
+.alert-dismiss-button {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+}
+
+.alert-dismiss-button:hover {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
+/* =========================================================
+   READ CARD
+========================================================= */
+
+.alert-card.read .alert-card-content h3 {
+  color: #374151;
+}
+
+.alert-card.read .alert-card-content p {
+  color: #9ca3af;
+}
+
+/* =========================================================
+   LARGE TABLET
+========================================================= */
+
+@media (max-width: 1050px) {
+  .alerts-container {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .alert-type-filters {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 760px) {
+  .alerts-container {
+    padding: 30px 20px 45px;
+  }
+
+  .alerts-header {
+    align-items: flex-start;
+  }
+
+  .alerts-header h1 {
+    font-size: 28px;
+  }
+
+  .alert-type-filters {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .alert-read-filter {
+    align-self: flex-start;
+  }
+
+  .alert-card {
+    grid-template-columns: 4px minmax(0, 1fr);
+  }
+
+  .alert-card-content {
+    padding: 18px;
+  }
+
+  .alert-card-actions {
+    grid-column: 2;
+    width: auto;
+    min-height: auto;
+
+    flex-direction: row;
+
+    padding: 0 18px 18px;
+
+    border-left: none;
+    border-top: 1px solid #f0f1f3;
+  }
+
+  .alert-read-button,
+  .alert-dismiss-button {
+    flex: 1;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 520px) {
+  .alerts-container {
+    padding: 24px 14px 35px;
+  }
+
+  .alerts-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .alerts-summary {
+    width: 100%;
+    height: 65px;
+    flex-direction: row;
+    gap: 9px;
+  }
+
+  .alerts-summary strong {
+    font-size: 22px;
+  }
+
+  .alerts-summary span {
+    margin-top: 0;
+  }
+
+  .alert-type-filters {
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+
+  .alert-filter-button {
+    min-height: 36px;
+    font-size: 10px;
+  }
+
+  .alert-read-filter {
+    width: 100%;
+  }
+
+  .alert-read-filter button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .alert-card-content {
+    padding: 16px;
+  }
+
+  .alert-card-content h3 {
+    font-size: 15px;
+  }
+
+  .alert-card-content p {
+    font-size: 12px;
+  }
+
+  .alert-card-actions {
+    padding: 0 16px 16px;
+  }
+}
