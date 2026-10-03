@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'inventory',
     'expiry',
     "alerts",
+    'pricing',
 ]
 
 MIDDLEWARE = [

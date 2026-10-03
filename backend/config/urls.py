@@ -27,6 +27,8 @@ urlpatterns = [
     path('api/expiry/', include('expiry.urls')),
 
     path("api/alerts/", include("alerts.urls")),
+
+    path("api/pricing/", include("pricing.urls")),
 ]
 
 
