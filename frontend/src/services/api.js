@@ -481,3 +481,112 @@ export async function dismissAlert(id) {
 
   return true;
 }
+
+/* =========================
+   DYNAMIC PRICING
+========================= */
+
+export async function getPricing() {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/pricing/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function getPricingSuggestions() {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/pricing/suggestions/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function calculatePricing(productId) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/pricing/calculate/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      product: productId,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function createPricing(pricingData) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/pricing/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(pricingData),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function applyPricingDiscount(id, discountPercentage) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/pricing/${id}/apply/`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      discount_percentage: discountPercentage,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}

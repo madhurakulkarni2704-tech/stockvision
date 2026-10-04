@@ -135,6 +135,14 @@ function Dashboard() {
 
           <button
             className="sidebar-nav-item"
+            onClick={() => navigate("/pricing")}
+          >
+            <span className="sidebar-icon">₹</span>
+            <span>Pricing</span>
+          </button>
+
+          <button
+            className="sidebar-nav-item"
             onClick={() => navigate("/alerts")}
           >
             <span className="sidebar-icon">A</span>
@@ -510,6 +518,25 @@ function Dashboard() {
                   <div>
                     <strong>Expiry</strong>
                     <span>Monitor product expiry</span>
+                  </div>
+
+                  <b>&gt;</b>
+
+                </button>
+
+
+                <button
+                  className="quick-action"
+                  onClick={() => navigate("/pricing")}
+                >
+
+                  <div className="quick-icon green-bg">
+                    ₹
+                  </div>
+
+                  <div>
+                    <strong>Pricing</strong>
+                    <span>Manage dynamic pricing</span>
                   </div>
 
                   <b>&gt;</b>

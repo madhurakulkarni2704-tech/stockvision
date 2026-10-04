@@ -9,6 +9,7 @@ import Expiry from "./pages/Expiry";
 import Profile from "./pages/Profile";
 import ProtectedRoute from "./ProtectedRoute";
 import Alerts from "./pages/Alerts";
+import Pricing from "./pages/Pricing";
 
 import "./App.css";
 
@@ -80,6 +81,16 @@ function App() {
           element={
             <ProtectedRoute>
               <Alerts />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Dynamic Pricing */}
+        <Route
+          path="/pricing"
+          element={
+            <ProtectedRoute>
+              <Pricing />
             </ProtectedRoute>
           }
         />
