@@ -590,3 +590,66 @@ export async function applyPricingDiscount(id, discountPercentage) {
 
   return data;
 }
+
+/* =========================
+   SALES MANAGEMENT
+========================= */
+
+export async function getSales() {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/sales/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function getSale(id) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/sales/${id}/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}
+
+export async function createSale(saleData) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/sales/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(saleData),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || JSON.stringify(data));
+  }
+
+  return data;
+}

@@ -1,96 +1,87 @@
+import "./Dashboard.css";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
   getAlerts,
   getMe,
   getProfile,
   logoutUser,
 } from "../services/api";
-import "./Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [unreadAlerts, setUnreadAlerts] = useState(0);
+  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    async function loadUserData() {
+    async function loadDashboard() {
       try {
-        const userData = await getMe();
-        const profileData = await getProfile();
+        const [meData, profileData, alertsData] = await Promise.all([
+          getMe(),
+          getProfile(),
+          getAlerts(),
+        ]);
 
-        setUser(userData);
+        setUser(meData);
         setProfile(profileData);
-
-        try {
-          const unreadData = await getAlerts({
-            read: "false",
-          });
-
-          setUnreadAlerts(unreadData.length);
-        } catch (alertError) {
-          console.error("Unable to load alerts:", alertError);
-          setUnreadAlerts(0);
-        }
-      } catch (err) {
-        console.error(err);
-        setError("Unable to load your profile.");
+        setAlerts(Array.isArray(alertsData) ? alertsData : []);
+      } catch (error) {
+        console.error("Dashboard loading error:", error);
       } finally {
         setLoading(false);
       }
     }
 
-    loadUserData();
+    loadDashboard();
   }, []);
 
-  const handleLogout = () => {
-    logoutUser();
-    window.location.href = "/login";
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("access");
+      localStorage.removeItem("refresh");
+      navigate("/login");
+    }
   };
+
+  const displayName =
+    profile?.full_name ||
+    profile?.name ||
+    user?.username ||
+    user?.email ||
+    "User";
+
+  const email = profile?.email || user?.email || "";
 
   if (loading) {
     return (
       <div className="dashboard-loading">
         <div className="loading-spinner"></div>
-        <p>Loading your dashboard...</p>
+        <p>Loading dashboard...</p>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="dashboard-error">
-        <div className="error-box">
-          <div className="error-icon">!</div>
-
-          <h2>{error}</h2>
-
-          <button onClick={() => window.location.reload()}>
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const username = user?.username || "User";
-  const email = user?.email || "No email available";
-  const role = profile?.role || "USER";
 
   return (
     <div className="dashboard-page">
 
-      {/* SIDEBAR */}
+      {/* =========================================
+          SIDEBAR
+          ========================================= */}
 
       <aside className="dashboard-sidebar">
 
+        {/* Brand */}
         <div className="sidebar-brand">
           <div className="sidebar-logo">
-            SV
+            S
           </div>
 
           <div>
@@ -99,6 +90,7 @@ function Dashboard() {
           </div>
         </div>
 
+        {/* Navigation */}
         <nav className="sidebar-navigation">
 
           <button
@@ -125,6 +117,15 @@ function Dashboard() {
             <span>Inventory</span>
           </button>
 
+          {/* Sales */}
+          <button
+            className="sidebar-nav-item"
+            onClick={() => navigate("/sales")}
+          >
+            <span className="sidebar-icon">S</span>
+            <span>Sales</span>
+          </button>
+
           <button
             className="sidebar-nav-item"
             onClick={() => navigate("/expiry")}
@@ -147,12 +148,6 @@ function Dashboard() {
           >
             <span className="sidebar-icon">A</span>
             <span>Alerts</span>
-
-            {unreadAlerts > 0 && (
-              <span className="sidebar-alert-badge">
-                {unreadAlerts}
-              </span>
-            )}
           </button>
 
           <button
@@ -167,6 +162,7 @@ function Dashboard() {
 
         <div className="sidebar-divider"></div>
 
+        {/* Sidebar Promo */}
         <div className="sidebar-promo">
 
           <div className="promo-illustration">
@@ -175,24 +171,20 @@ function Dashboard() {
             <div className="promo-box box-three"></div>
 
             <div className="promo-chart">
-              STOCK
+              ╱╲╱
             </div>
           </div>
 
           <h3>
-            Manage Smarter
-            <br />
-            Grow Faster
+            Manage your inventory smarter
           </h3>
 
           <p>
-            Track inventory, manage products
-            and keep your business organized.
+            Track products, stock, sales and pricing from one place.
           </p>
 
           <div className="promo-dots">
             <span className="active"></span>
-            <span></span>
             <span></span>
             <span></span>
           </div>
@@ -202,27 +194,26 @@ function Dashboard() {
       </aside>
 
 
-      {/* MAIN AREA */}
+      {/* =========================================
+          MAIN AREA
+          ========================================= */}
 
-      <div className="dashboard-main">
+      <main className="dashboard-main">
 
-        {/* TOP HEADER */}
-
+        {/* Header */}
         <header className="dashboard-header">
 
           <div className="header-left">
 
-            <button className="menu-button">
-              MENU
+            <button
+              className="menu-button"
+              type="button"
+            >
+              ☰
             </button>
 
-            <div className="search-box">
-              <span>Search</span>
-
-              <input
-                type="text"
-                placeholder="Search anything..."
-              />
+            <div>
+              <strong>Dashboard</strong>
             </div>
 
           </div>
@@ -231,17 +222,12 @@ function Dashboard() {
 
             <button
               className="notification-button"
+              type="button"
               onClick={() => navigate("/alerts")}
             >
-              Alerts
+              ♧
 
-              {unreadAlerts > 0 && (
-                <span className="notification-badge">
-                  {unreadAlerts}
-                </span>
-              )}
-
-              {unreadAlerts > 0 && (
+              {alerts.length > 0 && (
                 <span className="notification-dot"></span>
               )}
             </button>
@@ -251,17 +237,15 @@ function Dashboard() {
             <div className="header-user">
 
               <div className="header-avatar">
-                {username.charAt(0).toUpperCase()}
+                {displayName.charAt(0).toUpperCase()}
               </div>
 
               <div className="header-user-info">
-                <strong>{username}</strong>
-                <span>{role}</span>
+                <strong>{displayName}</strong>
+                <span>{email}</span>
               </div>
 
-              <span className="header-arrow">
-                &gt;
-              </span>
+              <span className="header-arrow">⌄</span>
 
             </div>
 
@@ -269,6 +253,7 @@ function Dashboard() {
               className="header-logout"
               onClick={handleLogout}
             >
+              ↪
               Logout
             </button>
 
@@ -277,39 +262,44 @@ function Dashboard() {
         </header>
 
 
-        {/* CONTENT */}
+        {/* Main Content */}
+        <div className="dashboard-content">
 
-        <main className="dashboard-content">
-
-          {/* Welcome */}
+          {/* =========================================
+              WELCOME
+              ========================================= */}
 
           <section className="dashboard-welcome">
 
             <div>
 
               <span className="welcome-label">
-                DASHBOARD
+                INVENTORY MANAGEMENT
               </span>
 
               <h1>
-                Welcome back, <span>{username}!</span>
+                Good to see you,{" "}
+                <span>{displayName}!</span>
               </h1>
 
               <p>
-                Here's an overview of your StockVision workspace.
+                Manage your products, inventory, sales and pricing from one
+                place.
               </p>
 
             </div>
 
             <div className="role-badge">
               <span className="role-dot"></span>
-              {role}
+              Inventory Manager
             </div>
 
           </section>
 
 
-          {/* STAT CARDS */}
+          {/* =========================================
+              STATS
+              ========================================= */}
 
           <section className="dashboard-stats">
 
@@ -321,8 +311,8 @@ function Dashboard() {
 
               <div>
                 <p>Products</p>
-                <h2>--</h2>
-                <span>Coming soon</span>
+                <h2>—</h2>
+                <span>Manage products</span>
               </div>
 
             </div>
@@ -336,8 +326,8 @@ function Dashboard() {
 
               <div>
                 <p>Inventory</p>
-                <h2>--</h2>
-                <span>Coming soon</span>
+                <h2>—</h2>
+                <span>Track stock levels</span>
               </div>
 
             </div>
@@ -346,13 +336,13 @@ function Dashboard() {
             <div className="stat-card">
 
               <div className="stat-icon orange">
-                !
+                S
               </div>
 
               <div>
-                <p>Low Stock</p>
-                <h2>--</h2>
-                <span>Coming soon</span>
+                <p>Sales</p>
+                <h2>—</h2>
+                <span>Record product sales</span>
               </div>
 
             </div>
@@ -361,13 +351,13 @@ function Dashboard() {
             <div className="stat-card">
 
               <div className="stat-icon green">
-                OK
+                A
               </div>
 
               <div>
-                <p>Account</p>
-                <h2>Active</h2>
-                <span>Your account is active</span>
+                <p>Active Alerts</p>
+                <h2>{alerts.length}</h2>
+                <span>Inventory notifications</span>
               </div>
 
             </div>
@@ -375,39 +365,37 @@ function Dashboard() {
           </section>
 
 
-          {/* MAIN GRID */}
+          {/* =========================================
+              MAIN GRID
+              ========================================= */}
 
           <section className="dashboard-grid">
 
-            {/* Inventory Overview */}
-
-            <div className="dashboard-panel overview-panel">
+            {/* Overview */}
+            <div className="dashboard-panel">
 
               <div className="panel-header">
 
                 <div>
 
                   <div className="panel-title-row">
+                    <span className="panel-icon">◈</span>
 
-                    <span className="panel-icon">
-                      DATA
-                    </span>
-
-                    <h2>
-                      Inventory Overview
-                    </h2>
-
+                    <h2>Inventory Overview</h2>
                   </div>
 
                   <p>
-                    Your inventory analytics will appear here.
+                    Monitor your inventory activity
                   </p>
 
                 </div>
 
-                <button className="period-button">
-                  Last 7 days
-                  <span>DATE</span>
+                <button
+                  className="period-button"
+                  type="button"
+                >
+                  This Month
+                  <span>⌄</span>
                 </button>
 
               </div>
@@ -418,7 +406,7 @@ function Dashboard() {
                 <div className="chart-placeholder">
 
                   <div className="chart-circle">
-                    DATA
+                    ◌
                   </div>
 
                   <h3>
@@ -426,8 +414,8 @@ function Dashboard() {
                   </h3>
 
                   <p>
-                    Product and stock data will be displayed
-                    here once inventory management is available.
+                    Inventory charts and analytics will appear here as your
+                    inventory data grows.
                   </p>
 
                 </div>
@@ -438,7 +426,6 @@ function Dashboard() {
 
 
             {/* Quick Actions */}
-
             <div className="dashboard-panel">
 
               <div className="panel-header">
@@ -446,19 +433,13 @@ function Dashboard() {
                 <div>
 
                   <div className="panel-title-row">
+                    <span className="panel-icon">⚡</span>
 
-                    <span className="panel-icon">
-                      GO
-                    </span>
-
-                    <h2>
-                      Quick Actions
-                    </h2>
-
+                    <h2>Quick Actions</h2>
                   </div>
 
                   <p>
-                    Access your main workspace areas.
+                    Access your most-used tools
                   </p>
 
                 </div>
@@ -472,8 +453,7 @@ function Dashboard() {
                   className="quick-action"
                   onClick={() => navigate("/products")}
                 >
-
-                  <div className="quick-icon purple-bg">
+                  <div className="quick-icon blue-bg">
                     P
                   </div>
 
@@ -483,7 +463,6 @@ function Dashboard() {
                   </div>
 
                   <b>&gt;</b>
-
                 </button>
 
 
@@ -491,18 +470,34 @@ function Dashboard() {
                   className="quick-action"
                   onClick={() => navigate("/inventory")}
                 >
-
-                  <div className="quick-icon blue-bg">
+                  <div className="quick-icon green-bg">
                     I
                   </div>
 
                   <div>
                     <strong>Inventory</strong>
-                    <span>Monitor stock levels</span>
+                    <span>Track stock levels</span>
                   </div>
 
                   <b>&gt;</b>
+                </button>
 
+
+                {/* Sales */}
+                <button
+                  className="quick-action"
+                  onClick={() => navigate("/sales")}
+                >
+                  <div className="quick-icon purple-bg">
+                    S
+                  </div>
+
+                  <div>
+                    <strong>Sales</strong>
+                    <span>Record product sales</span>
+                  </div>
+
+                  <b>&gt;</b>
                 </button>
 
 
@@ -510,18 +505,16 @@ function Dashboard() {
                   className="quick-action"
                   onClick={() => navigate("/expiry")}
                 >
-
                   <div className="quick-icon orange-bg">
                     E
                   </div>
 
                   <div>
                     <strong>Expiry</strong>
-                    <span>Monitor product expiry</span>
+                    <span>Monitor expiry dates</span>
                   </div>
 
                   <b>&gt;</b>
-
                 </button>
 
 
@@ -529,8 +522,7 @@ function Dashboard() {
                   className="quick-action"
                   onClick={() => navigate("/pricing")}
                 >
-
-                  <div className="quick-icon green-bg">
+                  <div className="quick-icon yellow-bg">
                     ₹
                   </div>
 
@@ -540,7 +532,6 @@ function Dashboard() {
                   </div>
 
                   <b>&gt;</b>
-
                 </button>
 
 
@@ -548,22 +539,16 @@ function Dashboard() {
                   className="quick-action"
                   onClick={() => navigate("/alerts")}
                 >
-
-                  <div className="quick-icon orange-bg">
+                  <div className="quick-icon red-bg">
                     A
                   </div>
 
                   <div>
                     <strong>Alerts</strong>
-                    <span>
-                      {unreadAlerts > 0
-                        ? `${unreadAlerts} unread alert${unreadAlerts === 1 ? "" : "s"}`
-                        : "View notifications"}
-                    </span>
+                    <span>View inventory alerts</span>
                   </div>
 
                   <b>&gt;</b>
-
                 </button>
 
 
@@ -571,18 +556,16 @@ function Dashboard() {
                   className="quick-action"
                   onClick={() => navigate("/profile")}
                 >
-
-                  <div className="quick-icon green-bg">
+                  <div className="quick-icon gray-bg">
                     U
                   </div>
 
                   <div>
                     <strong>My Profile</strong>
-                    <span>View account details</span>
+                    <span>View your profile</span>
                   </div>
 
                   <b>&gt;</b>
-
                 </button>
 
               </div>
@@ -592,34 +575,34 @@ function Dashboard() {
           </section>
 
 
-          {/* ACCOUNT BANNER */}
+          {/* =========================================
+              ACCOUNT BANNER
+              ========================================= */}
 
           <section className="account-banner">
 
             <div className="account-avatar">
-              {username.charAt(0).toUpperCase()}
+              {displayName.charAt(0).toUpperCase()}
             </div>
 
             <div className="account-info">
 
               <h3>
-                {username}
+                {displayName}
               </h3>
 
               <p>
-                {email}
+                {email || "Manage your StockVision account"}
               </p>
 
             </div>
 
             <div className="account-role">
 
-              <span>
-                ACCOUNT ROLE
-              </span>
+              <span>ACCOUNT</span>
 
               <strong>
-                {role}
+                Active
               </strong>
 
             </div>
@@ -628,14 +611,113 @@ function Dashboard() {
               className="view-profile-button"
               onClick={() => navigate("/profile")}
             >
-              View Profile &gt;
+              View Profile
             </button>
 
           </section>
 
-        </main>
 
-      </div>
+          {/* =========================================
+              RECENT ALERTS
+              ========================================= */}
+
+          <section className="dashboard-panel">
+
+            <div className="panel-header">
+
+              <div>
+
+                <div className="panel-title-row">
+                  <span className="panel-icon">!</span>
+
+                  <h2>Recent Alerts</h2>
+                </div>
+
+                <p>
+                  Stay updated with important inventory notifications.
+                </p>
+
+              </div>
+
+              <button
+                className="view-profile-button"
+                onClick={() => navigate("/alerts")}
+              >
+                View All
+              </button>
+
+            </div>
+
+
+            {alerts.length === 0 ? (
+
+              <div className="empty-chart">
+
+                <div className="chart-placeholder">
+
+                  <div className="chart-circle">
+                    ✓
+                  </div>
+
+                  <h3>
+                    No active alerts
+                  </h3>
+
+                  <p>
+                    Your inventory currently has no important alerts.
+                  </p>
+
+                </div>
+
+              </div>
+
+            ) : (
+
+              <div className="quick-actions">
+
+                {alerts.slice(0, 5).map((alert, index) => (
+
+                  <div
+                    className="quick-action"
+                    key={alert.id || index}
+                  >
+
+                    <div className="quick-icon orange-bg">
+                      !
+                    </div>
+
+                    <div>
+
+                      <strong>
+                        {alert.title ||
+                          alert.message ||
+                          alert.alert_type ||
+                          "Inventory Alert"}
+                      </strong>
+
+                      <span>
+                        {alert.message &&
+                        alert.title &&
+                        alert.message !== alert.title
+                          ? alert.message
+                          : "View inventory alert details"}
+                      </span>
+
+                    </div>s
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            )}
+
+          </section>
+
+        </div>
+
+      </main>
 
     </div>
   );

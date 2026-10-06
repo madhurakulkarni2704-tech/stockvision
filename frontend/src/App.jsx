@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import ProtectedRoute from "./ProtectedRoute";
 import Alerts from "./pages/Alerts";
 import Pricing from "./pages/Pricing";
+import Sales from "./pages/Sales";
 
 import "./App.css";
 
@@ -61,6 +62,16 @@ function App() {
           element={
             <ProtectedRoute>
               <Inventory />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Sales */}
+        <Route
+          path="/sales"
+          element={
+            <ProtectedRoute>
+              <Sales />
             </ProtectedRoute>
           }
         />
