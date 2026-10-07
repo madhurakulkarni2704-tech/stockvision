@@ -4,6 +4,7 @@ import {
   createProduct,
   deleteProduct,
   getProducts,
+  getProfile,
   updateProduct,
 } from "../services/api";
 import "./Products.css";
@@ -12,7 +13,8 @@ function Products() {
   const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+const [searchTerm, setSearchTerm] = useState("");
+const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -31,9 +33,20 @@ function Products() {
   });
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+  loadProducts();
+  loadUserProfile();
+}, []);
 
+
+async function loadUserProfile() {
+  try {
+    const profile = await getProfile();
+
+    setIsAdmin(profile?.role === "ADMIN");
+  } catch (err) {
+    setIsAdmin(false);
+  }
+}
   async function loadProducts() {
     try {
       setLoading(true);
@@ -264,12 +277,14 @@ function Products() {
               </p>
             </div>
 
-            <button
-              className="add-product-btn"
-              onClick={openAddForm}
-            >
-              + Add Product
-            </button>
+{isAdmin && (
+  <button
+    className="add-product-btn"
+    onClick={openAddForm}
+  >
+    + Add Product
+  </button>
+)}
           </div>
 
           {error && (
@@ -338,14 +353,14 @@ function Products() {
                   )}
                 </p>
 
-                {products.length === 0 && (
-                  <button
-                    className="empty-add-btn"
-                    onClick={openAddForm}
-                  >
-                    + Add Your First Product
-                  </button>
-                )}
+                {products.length === 0 && isAdmin && (
+  <button
+    className="empty-add-btn"
+    onClick={openAddForm}
+  >
+    + Add Your First Product
+  </button>
+)}
               </div>
             ) : (
               <div className="products-table-wrapper">
@@ -422,26 +437,28 @@ function Products() {
                         </td>
 
                         <td>
-                          <div className="product-actions">
-                            <button
-                              className="edit-btn"
-                              onClick={() =>
-                                openEditForm(product)
-                              }
-                            >
-                              Edit
-                            </button>
+  {isAdmin && (
+    <div className="product-actions">
+      <button
+        className="edit-btn"
+        onClick={() =>
+          openEditForm(product)
+        }
+      >
+        Edit
+      </button>
 
-                            <button
-                              className="delete-btn"
-                              onClick={() =>
-                                handleDelete(product)
-                              }
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
+      <button
+        className="delete-btn"
+        onClick={() =>
+          handleDelete(product)
+        }
+      >
+        Delete
+      </button>
+    </div>
+  )}
+</td>
                       </tr>
                     ))}
                   </tbody>

@@ -1,8 +1,70 @@
 const API_URL = "http://127.0.0.1:8000/api";
 
 /* =========================
+   RESPONSE HELPER
+========================= */
+
+async function parseResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+  const text = await response.text();
+
+  let data = null;
+
+  if (text) {
+    if (contentType.includes("application/json")) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = null;
+      }
+    } else {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = null;
+      }
+    }
+  }
+
+  if (!response.ok) {
+    if (data) {
+      const message =
+        data.detail ||
+        data.message ||
+        data.error ||
+        Object.values(data)
+          .flat()
+          .join(", ") ||
+        `Request failed with status ${response.status}`;
+
+      throw new Error(message);
+    }
+
+    if (text) {
+      throw new Error(
+        `Request failed with status ${response.status}. Server returned: ${text.slice(
+          0,
+          300
+        )}`
+      );
+    }
+
+    throw new Error(
+      `Request failed with status ${response.status}`
+    );
+  }
+
+  if (response.status === 204 || !text) {
+    return null;
+  }
+
+  return data !== null ? data : text;
+}
+
+/* =========================
    REGISTER
 ========================= */
+
 export async function registerUser(userData) {
   const response = await fetch(`${API_URL}/auth/register/`, {
     method: "POST",
@@ -12,18 +74,13 @@ export async function registerUser(userData) {
     body: JSON.stringify(userData),
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 /* =========================
    LOGIN
 ========================= */
+
 export async function loginUser(username, password) {
   const response = await fetch(`${API_URL}/auth/login/`, {
     method: "POST",
@@ -36,13 +93,8 @@ export async function loginUser(username, password) {
     }),
   });
 
-  const data = await response.json();
+  const data = await parseResponse(response);
 
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  // Save JWT tokens
   localStorage.setItem("access", data.access);
   localStorage.setItem("refresh", data.refresh);
 
@@ -52,6 +104,7 @@ export async function loginUser(username, password) {
 /* =========================
    LOGOUT
 ========================= */
+
 export function logoutUser() {
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
@@ -60,51 +113,41 @@ export function logoutUser() {
 /* =========================
    GET CURRENT USER
 ========================= */
+
 export async function getMe() {
   const token = localStorage.getItem("access");
 
   const response = await fetch(`${API_URL}/auth/me/`, {
     method: "GET",
     headers: {
-      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 /* =========================
    GET PROFILE
 ========================= */
+
 export const getProfile = async () => {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(
-    "http://127.0.0.1:8000/api/auth/profile/",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const response = await fetch(`${API_URL}/auth/profile/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch profile");
-  }
-
-  return response.json();
+  return parseResponse(response);
 };
 
 /* =========================
    REFRESH ACCESS TOKEN
 ========================= */
+
 export async function refreshAccessToken() {
   const refresh = localStorage.getItem("refresh");
 
@@ -112,26 +155,29 @@ export async function refreshAccessToken() {
     throw new Error("No refresh token found");
   }
 
-  const response = await fetch(`${API_URL}/auth/token/refresh/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      refresh,
-    }),
-  });
+  const response = await fetch(
+    `${API_URL}/auth/token/refresh/`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        refresh,
+      }),
+    }
+  );
 
-  const data = await response.json();
+  try {
+    const data = await parseResponse(response);
 
-  if (!response.ok) {
+    localStorage.setItem("access", data.access);
+
+    return data.access;
+  } catch (error) {
     logoutUser();
-    throw new Error(data.detail || "Session expired");
+    throw error;
   }
-
-  localStorage.setItem("access", data.access);
-
-  return data.access;
 }
 
 /* =========================
@@ -148,13 +194,7 @@ export async function getProducts() {
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function getProduct(id) {
@@ -167,13 +207,7 @@ export async function getProduct(id) {
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function createProduct(productData) {
@@ -187,49 +221,40 @@ export async function createProduct(productData) {
     body: productData,
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function updateProduct(id, productData) {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/products/${id}/`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: productData,
-  });
+  const response = await fetch(
+    `${API_URL}/products/${id}/`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: productData,
+    }
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function deleteProduct(id) {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/products/${id}/`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(
+    `${API_URL}/products/${id}/`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
-  if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data.detail || JSON.stringify(data));
-  }
+  await parseResponse(response);
 
   return true;
 }
@@ -248,78 +273,63 @@ export async function getInventory() {
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function addStock(id, quantity) {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/inventory/${id}/add-stock/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      quantity,
-    }),
-  });
+  const response = await fetch(
+    `${API_URL}/inventory/${id}/add-stock/`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        quantity,
+      }),
+    }
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function reduceStock(id, quantity) {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/inventory/${id}/reduce-stock/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      quantity,
-    }),
-  });
+  const response = await fetch(
+    `${API_URL}/inventory/${id}/reduce-stock/`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        quantity,
+      }),
+    }
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function getInventoryHistory(id) {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/inventory/${id}/history/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(
+    `${API_URL}/inventory/${id}/history/`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 /* =========================
@@ -336,51 +346,39 @@ export async function getExpiryProducts() {
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function getExpiringSoonProducts() {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/expiry/expiring-soon/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(
+    `${API_URL}/expiry/expiring-soon/`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function getExpiredProducts() {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/expiry/expired/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(
+    `${API_URL}/expiry/expired/`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function getSafeProducts() {
@@ -393,13 +391,7 @@ export async function getSafeProducts() {
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 /* =========================
@@ -420,7 +412,10 @@ export async function getAlerts(filters = {}) {
   }
 
   const queryString = params.toString();
-  const url = `${API_URL}/alerts/${queryString ? `?${queryString}` : ""}`;
+
+  const url = `${API_URL}/alerts/${
+    queryString ? `?${queryString}` : ""
+  }`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -429,55 +424,39 @@ export async function getAlerts(filters = {}) {
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function markAlertAsRead(id) {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/alerts/${id}/read/`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(
+    `${API_URL}/alerts/${id}/read/`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function dismissAlert(id) {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/alerts/${id}/`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok && response.status !== 204) {
-    let data = {};
-
-    try {
-      data = await response.json();
-    } catch {
-      data = {};
+  const response = await fetch(
+    `${API_URL}/alerts/${id}/`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     }
+  );
 
-    throw new Error(data.detail || "Failed to dismiss alert");
-  }
+  await parseResponse(response);
 
   return true;
 }
@@ -496,55 +475,43 @@ export async function getPricing() {
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function getPricingSuggestions() {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/pricing/suggestions/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(
+    `${API_URL}/pricing/suggestions/`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function calculatePricing(productId) {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/pricing/calculate/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      product: productId,
-    }),
-  });
+  const response = await fetch(
+    `${API_URL}/pricing/calculate/`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        product: productId,
+      }),
+    }
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function createPricing(pricingData) {
@@ -559,36 +526,30 @@ export async function createPricing(pricingData) {
     body: JSON.stringify(pricingData),
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
-export async function applyPricingDiscount(id, discountPercentage) {
+export async function applyPricingDiscount(
+  id,
+  discountPercentage
+) {
   const token = localStorage.getItem("access");
 
-  const response = await fetch(`${API_URL}/pricing/${id}/apply/`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      discount_percentage: discountPercentage,
-    }),
-  });
+  const response = await fetch(
+    `${API_URL}/pricing/${id}/apply/`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        discount_percentage: discountPercentage,
+      }),
+    }
+  );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 /* =========================
@@ -605,13 +566,7 @@ export async function getSales() {
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function getSale(id) {
@@ -624,13 +579,7 @@ export async function getSale(id) {
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
-
-  return data;
+  return parseResponse(response);
 }
 
 export async function createSale(saleData) {
@@ -645,11 +594,27 @@ export async function createSale(saleData) {
     body: JSON.stringify(saleData),
   });
 
-  const data = await response.json();
+  return parseResponse(response);
+}
 
-  if (!response.ok) {
-    throw new Error(data.detail || JSON.stringify(data));
-  }
+/* =========================
+   DASHBOARD & ANALYTICS
+========================= */
 
-  return data;
+export async function getDashboard(period = "7") {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(
+    `${API_URL}/dashboard/?period=${encodeURIComponent(
+      period
+    )}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return parseResponse(response);
 }
