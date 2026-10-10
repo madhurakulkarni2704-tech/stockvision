@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getPricingSuggestions,
   applyPricingDiscount,
@@ -12,11 +12,11 @@ function Pricing() {
   const [applyingId, setApplyingId] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const loadSuggestions = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const loadSuggestions = useCallback(async () => {
+    setLoading(true);
+    setError("");
 
+    try {
       const data = await getPricingSuggestions();
       setSuggestions(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -24,11 +24,11 @@ function Pricing() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadSuggestions();
-  }, []);
+    void Promise.resolve().then(() => loadSuggestions());
+  }, [loadSuggestions]);
 
   const handleApplyDiscount = async (item) => {
     try {
@@ -40,22 +40,19 @@ function Pricing() {
        * The apply endpoint works on an existing Pricing record.
        * Create the pricing record first when one does not already exist.
        */
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/pricing/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("access")}`,
-          },
-          body: JSON.stringify({
-            product: item.product_id,
-            discount_percentage: item.discount_percentage,
-            discounted_price: item.suggested_price,
-            is_applied: false,
-          }),
-        }
-      );
+      const response = await fetch("http://127.0.0.1:8000/api/pricing/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access")}`,
+        },
+        body: JSON.stringify({
+          product: item.product_id,
+          discount_percentage: item.discount_percentage,
+          discounted_price: item.suggested_price,
+          is_applied: false,
+        }),
+      });
 
       let pricingRecord;
 
@@ -67,7 +64,7 @@ function Pricing() {
          * OneToOne relationship with Pricing.
          */
         const existingResponse = await fetch(
-          `http://127.0.0.1:8000/api/pricing/`,
+          "http://127.0.0.1:8000/api/pricing/",
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access")}`,
@@ -88,9 +85,7 @@ function Pricing() {
         );
 
         if (!pricingRecord) {
-          throw new Error(
-            "Unable to create or find the pricing record."
-          );
+          throw new Error("Unable to create or find the pricing record.");
         }
       } else {
         const data = await response.json();
@@ -157,22 +152,14 @@ function Pricing() {
         </button>
       </div>
 
-      {error && (
-        <div className="pricing-message error">
-          {error}
-        </div>
-      )}
+      {error && <div className="pricing-message error">{error}</div>}
 
       {successMessage && (
-        <div className="pricing-message success">
-          {successMessage}
-        </div>
+        <div className="pricing-message success">{successMessage}</div>
       )}
 
       {loading ? (
-        <div className="pricing-empty">
-          Loading pricing suggestions...
-        </div>
+        <div className="pricing-empty">Loading pricing suggestions...</div>
       ) : suggestions.length === 0 ? (
         <div className="pricing-empty">
           No pricing suggestions are available.
@@ -184,16 +171,11 @@ function Pricing() {
             const isApplying = applyingId === item.product_id;
 
             return (
-              <div
-                className="pricing-card"
-                key={item.product_id}
-              >
+              <div className="pricing-card" key={item.product_id}>
                 <div className="pricing-card-header">
                   <div>
                     <h2>{item.product_name}</h2>
-                    <span className="pricing-sku">
-                      SKU: {item.sku}
-                    </span>
+                    <span className="pricing-sku">SKU: {item.sku}</span>
                   </div>
 
                   <span className={getStatusClass(item.status)}>
@@ -204,9 +186,7 @@ function Pricing() {
                 <div className="pricing-details">
                   <div className="pricing-detail">
                     <span>Original Price</span>
-                    <strong>
-                      {formatPrice(item.original_price)}
-                    </strong>
+                    <strong>{formatPrice(item.original_price)}</strong>
                   </div>
 
                   <div className="pricing-detail">
@@ -234,8 +214,8 @@ function Pricing() {
                       {item.days_remaining === null
                         ? "No expiry"
                         : item.days_remaining < 0
-                        ? "Expired"
-                        : item.days_remaining}
+                          ? "Expired"
+                          : item.days_remaining}
                     </strong>
                   </div>
 

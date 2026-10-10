@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  getExpiryProducts,
-  getExpiringSoonProducts,
-  getExpiredProducts,
-  getSafeProducts,
-} from "../services/api";
+import { getExpiryProducts } from "../services/api";
 import "./Expiry.css";
 
 function Expiry() {

@@ -1,42 +1,31 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import ProtectedRoute from "./ProtectedRoute";
+
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Inventory from "./pages/Inventory";
+import Sales from "./pages/Sales";
 import Expiry from "./pages/Expiry";
-import Profile from "./pages/Profile";
-import ProtectedRoute from "./ProtectedRoute";
 import Alerts from "./pages/Alerts";
 import Pricing from "./pages/Pricing";
-import Sales from "./pages/Sales";
-
-import "./App.css";
+import Profile from "./pages/Profile";
+import Reports from "./pages/Reports";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Default route */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {/* Default page */}
-        <Route
-          path="/"
-          element={<Navigate to="/login" replace />}
-        />
+        <Route path="/login" element={<Login />} />
 
-        {/* Public pages */}
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+        <Route path="/register" element={<Register />} />
 
-        <Route
-          path="/register"
-          element={<Register />}
-        />
-
-        {/* Protected Dashboard */}
+        {/* Dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -46,7 +35,7 @@ function App() {
           }
         />
 
-        {/* Protected Products */}
+        {/* Products */}
         <Route
           path="/products"
           element={
@@ -56,7 +45,7 @@ function App() {
           }
         />
 
-        {/* Protected Inventory */}
+        {/* Inventory */}
         <Route
           path="/inventory"
           element={
@@ -66,7 +55,7 @@ function App() {
           }
         />
 
-        {/* Protected Sales */}
+        {/* Sales */}
         <Route
           path="/sales"
           element={
@@ -76,7 +65,17 @@ function App() {
           }
         />
 
-        {/* Protected Expiry Monitoring */}
+        {/* Reports */}
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <Reports />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Expiry */}
         <Route
           path="/expiry"
           element={
@@ -86,7 +85,7 @@ function App() {
           }
         />
 
-        {/* Protected Alerts */}
+        {/* Alerts */}
         <Route
           path="/alerts"
           element={
@@ -96,7 +95,7 @@ function App() {
           }
         />
 
-        {/* Protected Dynamic Pricing */}
+        {/* Pricing */}
         <Route
           path="/pricing"
           element={
@@ -106,7 +105,7 @@ function App() {
           }
         />
 
-        {/* Protected Profile */}
+        {/* Profile */}
         <Route
           path="/profile"
           element={
@@ -116,6 +115,8 @@ function App() {
           }
         />
 
+        {/* Unknown routes */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );

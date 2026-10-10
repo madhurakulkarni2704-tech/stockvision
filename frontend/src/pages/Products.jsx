@@ -13,11 +13,10 @@ function Products() {
   const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
-const [searchTerm, setSearchTerm] = useState("");
-const [isAdmin, setIsAdmin] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
@@ -33,27 +32,25 @@ const [isAdmin, setIsAdmin] = useState(false);
   });
 
   useEffect(() => {
-  loadProducts();
-  loadUserProfile();
-}, []);
+    loadProducts();
+    loadUserProfile();
+  }, []);
 
-
-async function loadUserProfile() {
-  try {
-    const profile = await getProfile();
-
-    setIsAdmin(profile?.role === "ADMIN");
-  } catch (err) {
-    setIsAdmin(false);
+  async function loadUserProfile() {
+    try {
+      const profile = await getProfile();
+      setIsAdmin(profile?.role === "ADMIN");
+    } catch {
+      setIsAdmin(false);
+    }
   }
-}
+
   async function loadProducts() {
     try {
       setLoading(true);
       setError("");
 
       const data = await getProducts();
-
       setProducts(Array.isArray(data) ? data : data.results || []);
     } catch (err) {
       setError(err.message || "Failed to load products.");
@@ -212,7 +209,6 @@ async function loadUserProfile() {
       <aside className="products-sidebar">
         <div className="products-brand">
           <div className="products-logo">SV</div>
-
           <div>
             <h2>StockVision</h2>
             <span>Inventory Management</span>
@@ -221,12 +217,12 @@ async function loadUserProfile() {
 
         <nav className="products-nav">
           <button onClick={() => navigate("/dashboard")}>
-            <span>⌂</span>
+            <span>▦</span>
             Dashboard
           </button>
 
           <button className="active">
-            <span>▣</span>
+            <span>◇</span>
             Products
           </button>
 
@@ -236,7 +232,7 @@ async function loadUserProfile() {
           </button>
 
           <button onClick={() => navigate("/profile")}>
-            <span>◉</span>
+            <span>○</span>
             Profile
           </button>
         </nav>
@@ -246,7 +242,6 @@ async function loadUserProfile() {
         <header className="products-header">
           <div className="products-header-search">
             <span>⌕</span>
-
             <input
               type="text"
               placeholder="Search products..."
@@ -255,10 +250,7 @@ async function loadUserProfile() {
             />
           </div>
 
-          <button
-            className="products-logout"
-            onClick={handleLogout}
-          >
+          <button className="products-logout" onClick={handleLogout}>
             Logout
           </button>
         </header>
@@ -266,37 +258,23 @@ async function loadUserProfile() {
         <main className="products-content">
           <div className="products-title-row">
             <div>
-              <span className="products-label">
-                PRODUCT MANAGEMENT
-              </span>
-
+              <span className="products-label">PRODUCT MANAGEMENT</span>
               <h1>Products</h1>
-
-              <p>
-                Manage and organize your products in StockVision.
-              </p>
+              <p>Manage and organize your products in StockVision.</p>
             </div>
 
-{isAdmin && (
-  <button
-    className="add-product-btn"
-    onClick={openAddForm}
-  >
-    + Add Product
-  </button>
-)}
+            {isAdmin && (
+              <button className="add-product-btn" onClick={openAddForm}>
+                + Add Product
+              </button>
+            )}
           </div>
 
-          {error && (
-            <div className="products-error">
-              {error}
-            </div>
-          )}
+          {error && <div className="products-error">{error}</div>}
 
           <div className="products-toolbar">
             <div className="products-search">
               <span>⌕</span>
-
               <input
                 type="text"
                 placeholder="Search by product name, SKU or category..."
@@ -310,7 +288,6 @@ async function loadUserProfile() {
             <div className="products-card-header">
               <div>
                 <h2>All Products</h2>
-
                 <p>
                   {loading
                     ? "Loading products..."
@@ -320,19 +297,15 @@ async function loadUserProfile() {
 
               <span className="product-count">
                 {filteredProducts.length}{" "}
-                {filteredProducts.length === 1
-                  ? "Product"
-                  : "Products"}
+                {filteredProducts.length === 1 ? "Product" : "Products"}
               </span>
             </div>
 
             {loading ? (
-              <div className="products-loading">
-                Loading products...
-              </div>
+              <div className="products-loading">Loading products...</div>
             ) : filteredProducts.length === 0 ? (
               <div className="products-empty">
-                <div className="empty-icon">▣</div>
+                <div className="empty-icon">◇</div>
 
                 <h3>
                   {products.length === 0
@@ -345,8 +318,7 @@ async function loadUserProfile() {
                     <>
                       You haven't added any products yet.
                       <br />
-                      Add your first product to start managing
-                      your inventory.
+                      Add your first product to start managing your inventory.
                     </>
                   ) : (
                     "Try changing your search."
@@ -354,13 +326,10 @@ async function loadUserProfile() {
                 </p>
 
                 {products.length === 0 && isAdmin && (
-  <button
-    className="empty-add-btn"
-    onClick={openAddForm}
-  >
-    + Add Your First Product
-  </button>
-)}
+                  <button className="empty-add-btn" onClick={openAddForm}>
+                    + Add Your First Product
+                  </button>
+                )}
               </div>
             ) : (
               <div className="products-table-wrapper">
@@ -390,75 +359,53 @@ async function loadUserProfile() {
                               />
                             ) : (
                               <div className="product-image-placeholder">
-                                {product.name
-                                  ?.charAt(0)
-                                  .toUpperCase() || "P"}
+                                {product.name?.charAt(0).toUpperCase() || "P"}
                               </div>
                             )}
 
                             <div>
                               <strong>{product.name}</strong>
-
                               {product.description && (
-                                <small>
-                                  {product.description}
-                                </small>
+                                <small>{product.description}</small>
                               )}
                             </div>
                           </div>
                         </td>
 
                         <td>{product.sku}</td>
-
-                        <td>
-                          {product.category || "-"}
-                        </td>
-
-                        <td>
-                          ₹{Number(product.price).toFixed(2)}
-                        </td>
-
-                        <td>
-                          {product.unit || "-"}
-                        </td>
+                        <td>{product.category || "-"}</td>
+                        <td>₹{Number(product.price).toFixed(2)}</td>
+                        <td>{product.unit || "-"}</td>
 
                         <td>
                           <span
                             className={`status-badge ${
-                              product.status === "ACTIVE"
-                                ? "active"
-                                : "inactive"
+                              product.status === "ACTIVE" ? "active" : "inactive"
                             }`}
                           >
-                            {product.status === "ACTIVE"
-                              ? "Active"
-                              : "Inactive"}
+                            {product.status === "ACTIVE" ? "Active" : "Inactive"}
                           </span>
                         </td>
 
                         <td>
-  {isAdmin && (
-    <div className="product-actions">
-      <button
-        className="edit-btn"
-        onClick={() =>
-          openEditForm(product)
-        }
-      >
-        Edit
-      </button>
+                          {isAdmin && (
+                            <div className="product-actions">
+                              <button
+                                className="edit-btn"
+                                onClick={() => openEditForm(product)}
+                              >
+                                Edit
+                              </button>
 
-      <button
-        className="delete-btn"
-        onClick={() =>
-          handleDelete(product)
-        }
-      >
-        Delete
-      </button>
-    </div>
-  )}
-</td>
+                              <button
+                                className="delete-btn"
+                                onClick={() => handleDelete(product)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -474,12 +421,7 @@ async function loadUserProfile() {
           <div className="product-modal">
             <div className="product-modal-header">
               <div>
-                <h2>
-                  {editingProduct
-                    ? "Edit Product"
-                    : "Add Product"}
-                </h2>
-
+                <h2>{editingProduct ? "Edit Product" : "Add Product"}</h2>
                 <p>
                   {editingProduct
                     ? "Update the product information."
@@ -496,16 +438,10 @@ async function loadUserProfile() {
               </button>
             </div>
 
-            <form
-              className="product-form"
-              onSubmit={handleSubmit}
-            >
+            <form className="product-form" onSubmit={handleSubmit}>
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="name">
-                    Product Name *
-                  </label>
-
+                  <label htmlFor="name">Product Name *</label>
                   <input
                     id="name"
                     name="name"
@@ -517,10 +453,7 @@ async function loadUserProfile() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="sku">
-                    SKU *
-                  </label>
-
+                  <label htmlFor="sku">SKU *</label>
                   <input
                     id="sku"
                     name="sku"
@@ -534,10 +467,7 @@ async function loadUserProfile() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="category">
-                    Category
-                  </label>
-
+                  <label htmlFor="category">Category</label>
                   <input
                     id="category"
                     name="category"
@@ -548,10 +478,7 @@ async function loadUserProfile() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="price">
-                    Price *
-                  </label>
-
+                  <label htmlFor="price">Price *</label>
                   <input
                     id="price"
                     name="price"
@@ -567,10 +494,7 @@ async function loadUserProfile() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="unit">
-                    Unit
-                  </label>
-
+                  <label htmlFor="unit">Unit</label>
                   <input
                     id="unit"
                     name="unit"
@@ -582,32 +506,21 @@ async function loadUserProfile() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="status">
-                    Status
-                  </label>
-
+                  <label htmlFor="status">Status</label>
                   <select
                     id="status"
                     name="status"
                     value={formData.status}
                     onChange={handleInputChange}
                   >
-                    <option value="ACTIVE">
-                      Active
-                    </option>
-
-                    <option value="INACTIVE">
-                      Inactive
-                    </option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
                   </select>
                 </div>
               </div>
 
               <div className="form-group">
-                <label htmlFor="description">
-                  Description
-                </label>
-
+                <label htmlFor="description">Description</label>
                 <textarea
                   id="description"
                   name="description"
@@ -618,10 +531,7 @@ async function loadUserProfile() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="image">
-                  Product Image
-                </label>
-
+                <label htmlFor="image">Product Image</label>
                 <input
                   id="image"
                   name="image"
@@ -631,9 +541,7 @@ async function loadUserProfile() {
                 />
 
                 {formData.image && (
-                  <small>
-                    Selected: {formData.image.name}
-                  </small>
+                  <small>Selected: {formData.image.name}</small>
                 )}
               </div>
 
@@ -646,13 +554,8 @@ async function loadUserProfile() {
                   Cancel
                 </button>
 
-                <button
-                  type="submit"
-                  className="save-product-btn"
-                >
-                  {editingProduct
-                    ? "Update Product"
-                    : "Add Product"}
+                <button type="submit" className="save-product-btn">
+                  {editingProduct ? "Update Product" : "Add Product"}
                 </button>
               </div>
             </form>

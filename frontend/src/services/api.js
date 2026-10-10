@@ -618,3 +618,100 @@ export async function getDashboard(period = "7") {
 
   return parseResponse(response);
 }
+
+
+/* =========================
+   MODULE 9 - REPORTS
+========================= */
+
+async function getReport(endpoint, filters = {}) {
+  const token = localStorage.getItem("access");
+  const params = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      params.append(key, value);
+    }
+  });
+
+  const queryString = params.toString();
+  const url = `${API_URL}/reports/${endpoint}/${
+    queryString ? `?${queryString}` : ""
+  }`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return parseResponse(response);
+}
+
+export function getSalesReport(filters = {}) {
+  return getReport("sales", filters);
+}
+
+export function getInventoryReport(filters = {}) {
+  return getReport("inventory", filters);
+}
+
+export function getExpiryReport(filters = {}) {
+  return getReport("expiry", filters);
+}
+
+export function getLowStockReport(filters = {}) {
+  return getReport("low-stock", filters);
+}
+
+export function getDiscountReport(filters = {}) {
+  return getReport("discount", filters);
+}
+
+export async function downloadSalesReport(format, filters = {}) {
+  const allowedFormats = ["csv", "excel", "pdf"];
+
+  if (!allowedFormats.includes(format)) {
+    throw new Error("Unsupported report format.");
+  }
+
+  const token = localStorage.getItem("access");
+  const params = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      params.append(key, value);
+    }
+  });
+
+  const queryString = params.toString();
+  const url = `${API_URL}/reports/sales/export/${format}/${
+    queryString ? `?${queryString}` : ""
+  }`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    await parseResponse(response);
+    throw new Error("Failed to download the sales report.");
+  }
+
+  const blob = await response.blob();
+  const extension = format === "excel" ? "xlsx" : format;
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = downloadUrl;
+  link.download = `sales-report.${extension}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(downloadUrl);
+}
+

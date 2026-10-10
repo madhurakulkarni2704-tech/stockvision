@@ -415,6 +415,14 @@ function Dashboard() {
 
           <button
             className="sidebar-nav-item"
+            onClick={() => navigate("/reports")}
+          >
+            <span className="sidebar-icon">R</span>
+            <span>Reports</span>
+          </button>
+
+          <button
+            className="sidebar-nav-item"
             onClick={() => navigate("/expiry")}
           >
             <span className="sidebar-icon">E</span>

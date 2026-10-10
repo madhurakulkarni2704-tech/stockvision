@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   dismissAlert,
   getAlerts,
@@ -22,11 +22,11 @@ function Alerts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadAlerts = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const loadAlerts = useCallback(async () => {
+    setLoading(true);
+    setError("");
 
+    try {
       const filters = {};
 
       if (readFilter === "READ") {
@@ -46,11 +46,15 @@ function Alerts() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, readFilter]);
 
   useEffect(() => {
-    loadAlerts();
-  }, [filter, readFilter]);
+    const task = Promise.resolve().then(() => loadAlerts());
+
+    return () => {
+      void task;
+    };
+  }, [loadAlerts]);
 
   const handleMarkRead = async (id) => {
     try {
@@ -58,9 +62,7 @@ function Alerts() {
 
       setAlerts((currentAlerts) =>
         currentAlerts.map((alert) =>
-          alert.id === id
-            ? { ...alert, is_read: true }
-            : alert
+          alert.id === id ? { ...alert, is_read: true } : alert
         )
       );
     } catch (err) {
@@ -85,14 +87,11 @@ function Alerts() {
   return (
     <div className="alerts-page">
       <div className="alerts-container">
-
         <div className="alerts-header">
           <div>
             <span className="alerts-label">NOTIFICATIONS</span>
             <h1>Alerts</h1>
-            <p>
-              Monitor stock, expiry, and product-related alerts.
-            </p>
+            <p>Monitor stock, expiry, and product-related alerts.</p>
           </div>
 
           <div className="alerts-summary">
@@ -102,7 +101,6 @@ function Alerts() {
         </div>
 
         <div className="alerts-controls">
-
           <div className="alert-type-filters">
             {ALERT_TYPES.map((type) => (
               <button
@@ -139,26 +137,17 @@ function Alerts() {
               Read
             </button>
           </div>
-
         </div>
 
-        {error && (
-          <div className="alerts-error">
-            {error}
-          </div>
-        )}
+        {error && <div className="alerts-error">{error}</div>}
 
         {loading ? (
-          <div className="alerts-state">
-            Loading alerts...
-          </div>
+          <div className="alerts-state">Loading alerts...</div>
         ) : alerts.length === 0 ? (
           <div className="alerts-empty">
             <div className="alerts-empty-icon">✓</div>
             <h2>No alerts found</h2>
-            <p>
-              There are no alerts matching the selected filters.
-            </p>
+            <p>There are no alerts matching the selected filters.</p>
           </div>
         ) : (
           <div className="alerts-list">
@@ -169,35 +158,26 @@ function Alerts() {
                   alert.is_read ? "read" : "unread"
                 }`}
               >
-
                 <div className="alert-card-indicator"></div>
 
                 <div className="alert-card-content">
-
                   <div className="alert-card-top">
-                    <span className="alert-type">
-                      {alert.alert_type}
-                    </span>
+                    <span className="alert-type">{alert.alert_type}</span>
 
                     {!alert.is_read && (
-                      <span className="unread-badge">
-                        UNREAD
-                      </span>
+                      <span className="unread-badge">UNREAD</span>
                     )}
                   </div>
 
                   <h3>{alert.product_name}</h3>
-
                   <p>{alert.message}</p>
 
                   <span className="alert-product-sku">
                     SKU: {alert.product_sku}
                   </span>
-
                 </div>
 
                 <div className="alert-card-actions">
-
                   {!alert.is_read && (
                     <button
                       className="alert-read-button"
@@ -213,14 +193,11 @@ function Alerts() {
                   >
                     Dismiss
                   </button>
-
                 </div>
-
               </div>
             ))}
           </div>
         )}
-
       </div>
     </div>
   );
