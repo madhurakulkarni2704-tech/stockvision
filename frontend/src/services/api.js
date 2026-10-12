@@ -715,3 +715,50 @@ export async function downloadSalesReport(format, filters = {}) {
   URL.revokeObjectURL(downloadUrl);
 }
 
+export async function getAdminUsers() {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(`${API_URL}/auth/admin/users/`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      data.detail || data.message || "Failed to load admin users."
+    );
+  }
+
+  return data;
+}
+
+export async function updateAdminUser(userId, role) {
+  const token = localStorage.getItem("access");
+
+  const response = await fetch(
+    `${API_URL}/auth/admin/users/${userId}/`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ role }),
+    }
+  );
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      data.detail || data.message || "Failed to update user role."
+    );
+  }
+
+  return data;
+}

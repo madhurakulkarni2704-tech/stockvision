@@ -453,6 +453,17 @@ function Dashboard() {
             <span>Profile</span>
           </button>
 
+          
+            {user?.role === "ADMIN" && (
+          <button
+              className="sidebar-nav-item"
+              onClick={() => navigate("/admin-management")}
+            >
+            <span className="sidebar-icon">A</span>
+            <span>Admin Management</span>
+          </button>
+          )}
+
         </nav>
 
 

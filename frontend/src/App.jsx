@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import ProtectedRoute from "./ProtectedRoute";
@@ -11,6 +12,7 @@ import Alerts from "./pages/Alerts";
 import Pricing from "./pages/Pricing";
 import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
+import AdminManagement from "./pages/AdminManagement";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
@@ -21,8 +23,8 @@ function App() {
         {/* Default route */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
+        {/* Public routes */}
         <Route path="/login" element={<Login />} />
-
         <Route path="/register" element={<Register />} />
 
         {/* Dashboard */}
@@ -115,6 +117,16 @@ function App() {
           }
         />
 
+        {/* Admin Management */}
+        <Route
+          path="/admin-management"
+          element={
+            <ProtectedRoute>
+              <AdminManagement />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Unknown routes */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
@@ -123,3 +135,4 @@ function App() {
 }
 
 export default App;
+

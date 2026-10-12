@@ -6,6 +6,8 @@ from .views import (
     AdminTestView,
     ShopkeeperTestView,
     ProfileView,
+    AdminUserListView,
+    AdminUserDetailView,
 )
 
 from rest_framework_simplejwt.views import (
@@ -27,4 +29,7 @@ urlpatterns = [
     path('shopkeeper-test/', ShopkeeperTestView.as_view(), name='shopkeeper_test'),
 
     path('profile/', ProfileView.as_view(), name='profile'),
+
+   path("admin/users/", AdminUserListView.as_view(), name="admin_users"),
+   path("admin/users/<int:pk>/", AdminUserDetailView.as_view(), name="admin_user_detail"),
 ]
