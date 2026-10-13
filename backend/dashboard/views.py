@@ -1,3 +1,4 @@
+
 from datetime import date, timedelta
 
 from django.db.models import F, Q, Sum
@@ -36,7 +37,6 @@ class DashboardView(APIView):
             "all": None,
         }
 
-        # Invalid values safely fall back to the default period.
         if period not in allowed_periods:
             period = "7"
 
@@ -51,8 +51,6 @@ class DashboardView(APIView):
 
         # =========================================================
         # DASHBOARD STATISTICS
-        # These are current store statistics and are not affected
-        # by the analytics period filter.
         # =========================================================
 
         total_products = Product.objects.count()
@@ -69,7 +67,6 @@ class DashboardView(APIView):
         ).count()
 
         expiring_soon = get_expiring_soon_products().count()
-
         expired_products = get_expired_products().count()
 
         total_sales = (
@@ -82,8 +79,7 @@ class DashboardView(APIView):
         todays_sales = (
             Sale.objects.filter(
                 sale_date__date=today
-            )
-            .aggregate(
+            ).aggregate(
                 total=Sum("total_amount")
             )["total"]
             or 0
@@ -237,8 +233,6 @@ class DashboardView(APIView):
 
         # =========================================================
         # EXPIRY TRENDS
-        # Current expiry status is intentionally independent of
-        # the analytics period.
         # =========================================================
 
         expiry_trends = [
@@ -288,6 +282,74 @@ class DashboardView(APIView):
         ]
 
         # =========================================================
+        # LOW STOCK TABLE
+        # =========================================================
+
+        low_stock_queryset = (
+            Inventory.objects
+            .filter(quantity__lte=F("low_stock_threshold"))
+            .select_related("product")
+            .order_by("quantity")
+        )
+
+        low_stock_data = [
+            {
+                "id": item.id,
+                "product_id": item.product_id,
+                "product_name": item.product.name,
+                "sku": item.product.sku,
+                "quantity": item.quantity,
+                "low_stock_threshold": item.low_stock_threshold,
+            }
+            for item in low_stock_queryset
+        ]
+
+        # =========================================================
+        # EXPIRING SOON TABLE
+        # =========================================================
+
+        expiring_soon_queryset = (
+            get_expiring_soon_products()
+            .order_by("expiry_date")
+        )
+
+        expiring_soon_data = [
+            {
+                "id": product.id,
+                "product_id": product.id,
+                "product_name": product.name,
+                "sku": product.sku,
+                "expiry_date": product.expiry_date,
+                "days_remaining": (
+                    product.expiry_date - today
+                ).days,
+            }
+            for product in expiring_soon_queryset
+        ]
+
+        # =========================================================
+        # RECENT SALES TABLE
+        # =========================================================
+
+        recent_sales_queryset = (
+            Sale.objects
+            .select_related("product")
+            .order_by("-sale_date")[:5]
+        )
+
+        recent_sales_data = [
+            {
+                "id": sale.id,
+                "product_name": sale.product.name,
+                "quantity": sale.quantity,
+                "selling_price": sale.selling_price,
+                "total_amount": sale.total_amount,
+                "sale_date": sale.sale_date,
+            }
+            for sale in recent_sales_queryset
+        ]
+
+        # =========================================================
         # FILTER INFORMATION
         # =========================================================
 
@@ -330,5 +392,11 @@ class DashboardView(APIView):
                     "expiry_trends": expiry_trends,
                     "discount_usage": discount_usage_data,
                 },
+                "tables": {
+                    "low_stock": low_stock_data,
+                    "expiring_soon": expiring_soon_data,
+                    "recent_sales": recent_sales_data,
+                },
             }
         )
+

@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,6 +10,7 @@ import {
   downloadSalesReport,
   getProducts,
 } from "../services/api";
+import Sidebar from "../components/Sidebar";
 import "./Reports.css";
 
 const REPORTS = [
@@ -40,6 +42,7 @@ function formatDate(value) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
+
   return date.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
@@ -102,6 +105,7 @@ function ReportTable({ columns, rows, emptyMessage }) {
 
 export default function Reports() {
   const navigate = useNavigate();
+
   const [activeReport, setActiveReport] = useState("sales");
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
@@ -167,11 +171,11 @@ export default function Reports() {
   }, [activeReport, appliedFilters]);
 
   useEffect(() => {
-    void Promise.resolve().then(() => loadProducts());
+    void loadProducts();
   }, [loadProducts]);
 
   useEffect(() => {
-    void Promise.resolve().then(() => loadReport());
+    void loadReport();
   }, [loadReport]);
 
   const columns = useMemo(() => {
@@ -184,6 +188,7 @@ export default function Reports() {
           { key: "selling_price", label: "Selling price", render: formatMoney },
           { key: "total_amount", label: "Total amount", render: formatMoney },
         ];
+
       case "inventory":
         return [
           { key: "product", label: "Product" },
@@ -192,6 +197,7 @@ export default function Reports() {
           { key: "low_stock_threshold", label: "Low-stock threshold" },
           { key: "updated_at", label: "Last updated", render: formatDate },
         ];
+
       case "expiry":
         return [
           { key: "product", label: "Product" },
@@ -205,6 +211,7 @@ export default function Reports() {
             ),
           },
         ];
+
       case "low-stock":
         return [
           { key: "product", label: "Product" },
@@ -221,6 +228,7 @@ export default function Reports() {
             ),
           },
         ];
+
       default:
         return [
           { key: "product", label: "Product" },
@@ -310,55 +318,14 @@ export default function Reports() {
 
   return (
     <div className="reports-layout">
-      <aside className="reports-sidebar">
-        <div className="reports-brand">
-          <span className="reports-brand-mark">S</span>
-          <span>StockVision</span>
-        </div>
-
-        <div className="reports-nav-label">WORKSPACE</div>
-        <nav className="reports-nav">
-          {[
-            { label: "Dashboard", path: "/dashboard", icon: "⌂" },
-            { label: "Products", path: "/products", icon: "▦" },
-            { label: "Inventory", path: "/inventory", icon: "▤" },
-            { label: "Sales", path: "/sales", icon: "↗" },
-            { label: "Reports", path: "/reports", icon: "▥" },
-            { label: "Profile", path: "/profile", icon: "◉" },
-          ].map((item) => (
-            <button
-              type="button"
-              key={item.path}
-              className={`reports-nav-item ${
-                item.path === "/reports" ? "active" : ""
-              }`}
-              onClick={() => navigate(item.path)}
-            >
-              <span className="reports-nav-icon">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="reports-sidebar-bottom">
-          <div className="reports-help">
-            <span className="reports-help-icon">?</span>
-            <div>
-              <strong>Need help?</strong>
-              <p>Manage your stock with confidence.</p>
-            </div>
-          </div>
-          <button type="button" className="reports-logout" onClick={logout}>
-            <span>↪</span> Log out
-          </button>
-        </div>
-      </aside>
+      <Sidebar activePage="reports" />
 
       <main className="reports-main">
         <header className="reports-topbar">
           <div className="reports-breadcrumb">
             Workspace <span>/</span> Reports
           </div>
+
           <div className="reports-topbar-right">
             <span className="reports-live-dot" />
             <span>Inventory insights</span>
@@ -425,6 +392,7 @@ export default function Reports() {
                     }
                   />
                 </label>
+
                 <label>
                   End date
                   <input
@@ -465,6 +433,7 @@ export default function Reports() {
               >
                 Apply filters
               </button>
+
               <button
                 className="reports-button reports-button-secondary"
                 type="button"
@@ -523,6 +492,7 @@ export default function Reports() {
                   >
                     {exporting === "csv" ? "Preparing…" : "↓ CSV"}
                   </button>
+
                   <button
                     type="button"
                     className="reports-button reports-button-export"
@@ -531,6 +501,7 @@ export default function Reports() {
                   >
                     {exporting === "excel" ? "Preparing…" : "↓ Excel"}
                   </button>
+
                   <button
                     type="button"
                     className="reports-button reports-button-export"

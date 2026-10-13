@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -7,7 +8,20 @@ import {
   getProfile,
   updateProduct,
 } from "../services/api";
+import Sidebar from "../components/Sidebar";
 import "./Products.css";
+
+const initialFormData = {
+  name: "",
+  sku: "",
+  category: "",
+  description: "",
+  price: "",
+  unit: "",
+  expiry_date: "",
+  status: "ACTIVE",
+  image: null,
+};
 
 function Products() {
   const navigate = useNavigate();
@@ -19,17 +33,7 @@ function Products() {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    sku: "",
-    category: "",
-    description: "",
-    price: "",
-    unit: "",
-    status: "ACTIVE",
-    image: null,
-  });
+  const [formData, setFormData] = useState({ ...initialFormData });
 
   useEffect(() => {
     loadProducts();
@@ -38,8 +42,12 @@ function Products() {
 
   async function loadUserProfile() {
     try {
-      const profile = await getProfile();
-      setIsAdmin(profile?.role === "ADMIN");
+      const response = await getProfile();
+      const profile = response?.data ?? response?.user ?? response;
+
+      setIsAdmin(
+        String(profile?.role ?? "").toUpperCase() === "ADMIN"
+      );
     } catch {
       setIsAdmin(false);
     }
@@ -50,8 +58,12 @@ function Products() {
       setLoading(true);
       setError("");
 
-      const data = await getProducts();
-      setProducts(Array.isArray(data) ? data : data.results || []);
+      const response = await getProducts();
+      const data = response?.data ?? response;
+
+      setProducts(
+        Array.isArray(data) ? data : data?.results || []
+      );
     } catch (err) {
       setError(err.message || "Failed to load products.");
     } finally {
@@ -60,17 +72,7 @@ function Products() {
   }
 
   function resetForm() {
-    setFormData({
-      name: "",
-      sku: "",
-      category: "",
-      description: "",
-      price: "",
-      unit: "",
-      status: "ACTIVE",
-      image: null,
-    });
-
+    setFormData({ ...initialFormData });
     setEditingProduct(null);
   }
 
@@ -94,8 +96,8 @@ function Products() {
 
   function openAddForm() {
     resetForm();
-    setShowForm(true);
     setError("");
+    setShowForm(true);
   }
 
   function openEditForm(product) {
@@ -106,14 +108,15 @@ function Products() {
       sku: product.sku || "",
       category: product.category || "",
       description: product.description || "",
-      price: product.price || "",
+      price: product.price ?? "",
       unit: product.unit || "",
+      expiry_date: product.expiry_date || "",
       status: product.status || "ACTIVE",
       image: null,
     });
 
-    setShowForm(true);
     setError("");
+    setShowForm(true);
   }
 
   function closeForm() {
@@ -130,6 +133,7 @@ function Products() {
     data.append("description", formData.description.trim());
     data.append("price", formData.price);
     data.append("unit", formData.unit.trim());
+    data.append("expiry_date", formData.expiry_date || "");
     data.append("status", formData.status);
 
     if (formData.image) {
@@ -165,13 +169,10 @@ function Products() {
       `Are you sure you want to delete "${product.name}"?`
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       setError("");
-
       await deleteProduct(product.id);
 
       setProducts((previous) =>
@@ -185,18 +186,28 @@ function Products() {
   const filteredProducts = useMemo(() => {
     const search = searchTerm.trim().toLowerCase();
 
-    if (!search) {
-      return products;
-    }
+    if (!search) return products;
 
-    return products.filter((product) => {
-      return (
-        product.name?.toLowerCase().includes(search) ||
-        product.sku?.toLowerCase().includes(search) ||
-        product.category?.toLowerCase().includes(search)
-      );
-    });
+    return products.filter((product) =>
+      product.name?.toLowerCase().includes(search) ||
+      product.sku?.toLowerCase().includes(search) ||
+      product.category?.toLowerCase().includes(search)
+    );
   }, [products, searchTerm]);
+
+  function formatExpiryDate(dateString) {
+    if (!dateString) return "Not set";
+
+    const date = new Date(`${dateString}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) return "Invalid date";
+
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
 
   function handleLogout() {
     localStorage.removeItem("access");
@@ -206,37 +217,7 @@ function Products() {
 
   return (
     <div className="products-page">
-      <aside className="products-sidebar">
-        <div className="products-brand">
-          <div className="products-logo">SV</div>
-          <div>
-            <h2>StockVision</h2>
-            <span>Inventory Management</span>
-          </div>
-        </div>
-
-        <nav className="products-nav">
-          <button onClick={() => navigate("/dashboard")}>
-            <span>▦</span>
-            Dashboard
-          </button>
-
-          <button className="active">
-            <span>◇</span>
-            Products
-          </button>
-
-          <button onClick={() => navigate("/inventory")}>
-            <span>▤</span>
-            Inventory
-          </button>
-
-          <button onClick={() => navigate("/profile")}>
-            <span>○</span>
-            Profile
-          </button>
-        </nav>
-      </aside>
+      <Sidebar activePage="products" />
 
       <div className="products-main">
         <header className="products-header">
@@ -314,15 +295,9 @@ function Products() {
                 </h3>
 
                 <p>
-                  {products.length === 0 ? (
-                    <>
-                      You haven't added any products yet.
-                      <br />
-                      Add your first product to start managing your inventory.
-                    </>
-                  ) : (
-                    "Try changing your search."
-                  )}
+                  {products.length === 0
+                    ? "You haven't added any products yet. Add your first product to start managing your inventory."
+                    : "Try changing your search."}
                 </p>
 
                 {products.length === 0 && isAdmin && (
@@ -341,6 +316,7 @@ function Products() {
                       <th>Category</th>
                       <th>Price</th>
                       <th>Unit</th>
+                      <th>Expiry Date</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -376,11 +352,14 @@ function Products() {
                         <td>{product.category || "-"}</td>
                         <td>₹{Number(product.price).toFixed(2)}</td>
                         <td>{product.unit || "-"}</td>
+                        <td>{formatExpiryDate(product.expiry_date)}</td>
 
                         <td>
                           <span
                             className={`status-badge ${
-                              product.status === "ACTIVE" ? "active" : "inactive"
+                              product.status === "ACTIVE"
+                                ? "active"
+                                : "inactive"
                             }`}
                           >
                             {product.status === "ACTIVE" ? "Active" : "Inactive"}
@@ -433,6 +412,7 @@ function Products() {
                 className="modal-close-btn"
                 onClick={closeForm}
                 type="button"
+                aria-label="Close form"
               >
                 ×
               </button>
@@ -517,6 +497,20 @@ function Products() {
                     <option value="INACTIVE">Inactive</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="expiry_date">Expiry Date (Optional)</label>
+                <input
+                  id="expiry_date"
+                  name="expiry_date"
+                  type="date"
+                  value={formData.expiry_date}
+                  onChange={handleInputChange}
+                />
+                <small>
+                  Leave blank for products that do not expire.
+                </small>
               </div>
 
               <div className="form-group">

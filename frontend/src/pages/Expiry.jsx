@@ -1,11 +1,10 @@
+
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { getExpiryProducts } from "../services/api";
+import Sidebar from "../components/Sidebar";
 import "./Expiry.css";
 
 function Expiry() {
-  const navigate = useNavigate();
-
   const [expiryProducts, setExpiryProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -96,133 +95,60 @@ function Expiry() {
     return "days-remaining safe";
   }
 
+  function handleLogout() {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    window.location.href = "/login";
+  }
+
   return (
     <div className="expiry-page">
+      <Sidebar activePage="expiry" />
 
-      {/* SIDEBAR */}
-      <aside className="expiry-sidebar">
-
-        <div className="expiry-brand">
-          <div className="expiry-logo">
-            SV
-          </div>
-
-          <div>
-            <h2>StockVision</h2>
-            <span>Expiry Monitoring</span>
-          </div>
-        </div>
-
-        <nav className="expiry-nav">
-
-          <button onClick={() => navigate("/dashboard")}>
-            <span>⌂</span>
-            Dashboard
-          </button>
-
-          <button onClick={() => navigate("/products")}>
-            <span>▣</span>
-            Products
-          </button>
-
-          <button onClick={() => navigate("/inventory")}>
-            <span>▤</span>
-            Inventory
-          </button>
-
-          <button className="active">
-            <span>◷</span>
-            Expiry
-          </button>
-
-          <button onClick={() => navigate("/profile")}>
-            <span>♙</span>
-            Profile
-          </button>
-
-        </nav>
-
-        <div className="expiry-sidebar-divider"></div>
-
-        <div className="expiry-sidebar-info">
-
-          <div className="expiry-info-symbol">
-            ⚠
-          </div>
-
-          <h3>
-            Stay Ahead of
-            <br />
-            Expiry Dates
-          </h3>
-
-          <p>
-            Monitor products approaching expiry
-            and reduce product waste.
-          </p>
-
-        </div>
-
-      </aside>
-
-      {/* MAIN */}
       <div className="expiry-main">
-
         {/* HEADER */}
         <header className="expiry-header">
-
           <div className="expiry-header-search">
             <span>⌕</span>
-
             <input
               type="text"
               placeholder="Search expiry..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search expiry products"
             />
           </div>
 
           <button
+            type="button"
             className="expiry-logout"
-            onClick={() => {
-              localStorage.removeItem("access");
-              localStorage.removeItem("refresh");
-              window.location.href = "/login";
-            }}
+            onClick={handleLogout}
           >
             Logout
           </button>
-
         </header>
 
         {/* CONTENT */}
         <main className="expiry-content">
-
           {/* TITLE */}
           <div className="expiry-title-row">
-
             <div>
               <span className="expiry-label">
                 EXPIRY MONITORING
               </span>
 
-              <h1>
-                Expiry Dashboard
-              </h1>
+              <h1>Expiry Dashboard</h1>
 
               <p>
                 Monitor product expiry dates and identify products
                 that need attention.
               </p>
             </div>
-
           </div>
 
           {/* STAT CARDS */}
           <section className="expiry-stats">
-
             <div className="expiry-stat-card">
-
               <div className="expiry-stat-icon purple">
                 📦
               </div>
@@ -232,11 +158,9 @@ function Expiry() {
                 <h2>{expiryProducts.length}</h2>
                 <span>Products with expiry data</span>
               </div>
-
             </div>
 
             <div className="expiry-stat-card">
-
               <div className="expiry-stat-icon red">
                 ⚠
               </div>
@@ -246,11 +170,9 @@ function Expiry() {
                 <h2>{expiredCount}</h2>
                 <span>Products already expired</span>
               </div>
-
             </div>
 
             <div className="expiry-stat-card">
-
               <div className="expiry-stat-icon orange">
                 ◷
               </div>
@@ -260,11 +182,9 @@ function Expiry() {
                 <h2>{expiringSoonCount}</h2>
                 <span>Within the next 7 days</span>
               </div>
-
             </div>
 
             <div className="expiry-stat-card">
-
               <div className="expiry-stat-icon green">
                 ✓
               </div>
@@ -274,16 +194,12 @@ function Expiry() {
                 <h2>{safeCount}</h2>
                 <span>More than 7 days remaining</span>
               </div>
-
             </div>
-
           </section>
 
           {/* FILTERS */}
           <section className="expiry-toolbar">
-
             <div className="expiry-search">
-
               <span>⌕</span>
 
               <input
@@ -291,30 +207,20 @@ function Expiry() {
                 placeholder="Search by product name, SKU or category..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                aria-label="Search by product name, SKU or category"
               />
-
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="expiry-filter"
+              aria-label="Filter by expiry status"
             >
-              <option value="ALL">
-                All Statuses
-              </option>
-
-              <option value="SAFE">
-                Safe
-              </option>
-
-              <option value="EXPIRING SOON">
-                Expiring Soon
-              </option>
-
-              <option value="EXPIRED">
-                Expired
-              </option>
+              <option value="ALL">All Statuses</option>
+              <option value="SAFE">Safe</option>
+              <option value="EXPIRING SOON">Expiring Soon</option>
+              <option value="EXPIRED">Expired</option>
             </select>
 
             <button
@@ -327,19 +233,13 @@ function Expiry() {
             >
               Clear
             </button>
-
           </section>
 
           {/* EXPIRY TABLE */}
           <section className="expiry-card">
-
             <div className="expiry-card-header">
-
               <div>
-                <h2>
-                  Product Expiry
-                </h2>
-
+                <h2>Product Expiry</h2>
                 <p>
                   Track expiry dates, remaining days and product status.
                 </p>
@@ -348,81 +248,51 @@ function Expiry() {
               <span className="expiry-count">
                 {filteredProducts.length} Items
               </span>
-
             </div>
 
             <div className="expiry-table-header">
-
               <span>PRODUCT</span>
               <span>SKU</span>
               <span>CATEGORY</span>
               <span>EXPIRY DATE</span>
               <span>DAYS REMAINING</span>
               <span>STATUS</span>
-
             </div>
 
             {loading ? (
-
               <div className="expiry-empty">
-                <h3>
-                  Loading expiry data...
-                </h3>
+                <h3>Loading expiry data...</h3>
               </div>
-
             ) : error ? (
-
               <div className="expiry-empty">
-                <h3>
-                  Unable to load expiry data
-                </h3>
-
-                <p>
-                  {error}
-                </p>
+                <h3>Unable to load expiry data</h3>
+                <p>{error}</p>
               </div>
-
             ) : filteredProducts.length === 0 ? (
-
               <div className="expiry-empty">
+                <div className="expiry-empty-icon">◷</div>
 
-                <div className="expiry-empty-icon">
-                  ◷
-                </div>
-
-                <h3>
-                  No matching expiry data
-                </h3>
+                <h3>No matching expiry data</h3>
 
                 <p>
-                  Try a different product name, SKU,
-                  category or expiry status.
+                  Try a different product name, SKU, category or expiry
+                  status.
                 </p>
-
               </div>
-
             ) : (
-
               <div className="expiry-table-body">
-
                 {filteredProducts.map((item) => (
-
                   <div
                     className="expiry-table-row"
                     key={item.id}
                   >
-
                     <span className="expiry-product-name">
                       {item.name}
                     </span>
 
-                    <span>
-                      {item.sku}
-                    </span>
+                    <span>{item.sku}</span>
 
-                    <span>
-                      {item.category || "—"}
-                    </span>
+                    <span>{item.category || "—"}</span>
 
                     <span>
                       {item.expiry_date
@@ -438,11 +308,11 @@ function Expiry() {
                           Number(item.days_remaining)
                         )}
                       >
-                        {item.days_remaining === null
+                        {item.days_remaining == null
                           ? "—"
-                          : item.days_remaining < 0
+                          : Number(item.days_remaining) < 0
                           ? `${Math.abs(
-                              item.days_remaining
+                              Number(item.days_remaining)
                             )} days overdue`
                           : `${item.days_remaining} days`}
                       </strong>
@@ -450,90 +320,57 @@ function Expiry() {
 
                     <span>
                       <span
-                        className={getStatusClass(
-                          item.expiry_status
-                        )}
+                        className={getStatusClass(item.expiry_status)}
                       >
                         {item.expiry_status}
                       </span>
                     </span>
-
                   </div>
-
                 ))}
-
               </div>
-
             )}
-
           </section>
 
           {/* WARNING CARDS */}
           <section className="expiry-warning-grid">
-
             <div className="expiry-warning-card expired">
-
-              <div className="expiry-warning-icon">
-                ⚠
-              </div>
+              <div className="expiry-warning-icon">⚠</div>
 
               <div>
-                <h3>
-                  Expired Products
-                </h3>
-
+                <h3>Expired Products</h3>
                 <p>
-                  These products have passed their expiry date
-                  and require immediate attention.
+                  These products have passed their expiry date and
+                  require immediate attention.
                 </p>
               </div>
-
             </div>
 
             <div className="expiry-warning-card soon">
-
-              <div className="expiry-warning-icon">
-                ◷
-              </div>
+              <div className="expiry-warning-icon">◷</div>
 
               <div>
-                <h3>
-                  Expiring Soon
-                </h3>
-
+                <h3>Expiring Soon</h3>
                 <p>
-                  Products with 7 or fewer days remaining
-                  should be reviewed and managed.
+                  Products with 7 or fewer days remaining should be
+                  reviewed and managed.
                 </p>
               </div>
-
             </div>
 
             <div className="expiry-warning-card safe">
-
-              <div className="expiry-warning-icon">
-                ✓
-              </div>
+              <div className="expiry-warning-icon">✓</div>
 
               <div>
-                <h3>
-                  Safe Products
-                </h3>
-
+                <h3>Safe Products</h3>
                 <p>
-                  These products have more than 7 days
-                  remaining before expiry.
+                  These products have more than 7 days remaining before
+                  expiry.
                 </p>
               </div>
-
             </div>
-
           </section>
-
         </main>
-
       </div>
-
     </div>
   );
 }

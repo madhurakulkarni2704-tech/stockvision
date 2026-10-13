@@ -1,3 +1,4 @@
+
 const API_URL = "http://127.0.0.1:8000/api";
 
 /* =========================
@@ -5,100 +6,34 @@ const API_URL = "http://127.0.0.1:8000/api";
 ========================= */
 
 async function parseResponse(response) {
-  const contentType = response.headers.get("content-type") || "";
   const text = await response.text();
-
   let data = null;
 
   if (text) {
-    if (contentType.includes("application/json")) {
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = null;
-      }
-    } else {
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = null;
-      }
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
     }
   }
 
   if (!response.ok) {
-    if (data) {
-      const message =
-        data.detail ||
-        data.message ||
-        data.error ||
-        Object.values(data)
-          .flat()
-          .join(", ") ||
-        `Request failed with status ${response.status}`;
+    const message =
+      data?.detail ||
+      data?.message ||
+      data?.error ||
+      (data && typeof data === "object"
+        ? Object.values(data).flat().join(", ")
+        : null) ||
+      (text
+        ? `Request failed (${response.status}): ${text.slice(0, 200)}`
+        : `Request failed with status ${response.status}`);
 
-      throw new Error(message);
-    }
-
-    if (text) {
-      throw new Error(
-        `Request failed with status ${response.status}. Server returned: ${text.slice(
-          0,
-          300
-        )}`
-      );
-    }
-
-    throw new Error(
-      `Request failed with status ${response.status}`
-    );
+    throw new Error(message);
   }
 
-  if (response.status === 204 || !text) {
-    return null;
-  }
-
+  if (response.status === 204 || !text) return null;
   return data !== null ? data : text;
-}
-
-/* =========================
-   REGISTER
-========================= */
-
-export async function registerUser(userData) {
-  const response = await fetch(`${API_URL}/auth/register/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(userData),
-  });
-
-  return parseResponse(response);
-}
-
-/* =========================
-   LOGIN
-========================= */
-
-export async function loginUser(username, password) {
-  const response = await fetch(`${API_URL}/auth/login/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      username,
-      password,
-    }),
-  });
-
-  const data = await parseResponse(response);
-
-  localStorage.setItem("access", data.access);
-  localStorage.setItem("refresh", data.refresh);
-
-  return data;
 }
 
 /* =========================
@@ -111,225 +46,195 @@ export function logoutUser() {
 }
 
 /* =========================
-   GET CURRENT USER
+   TOKEN REFRESH
 ========================= */
 
-export async function getMe() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/auth/me/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
-}
-
-/* =========================
-   GET PROFILE
-========================= */
-
-export const getProfile = async () => {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/auth/profile/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
-};
-
-/* =========================
-   REFRESH ACCESS TOKEN
-========================= */
+let refreshPromise = null;
 
 export async function refreshAccessToken() {
-  const refresh = localStorage.getItem("refresh");
+  // Reuse a refresh already in progress, avoiding concurrent refresh calls.
+  if (refreshPromise) return refreshPromise;
 
-  if (!refresh) {
-    throw new Error("No refresh token found");
-  }
+  refreshPromise = (async () => {
+    const refresh = localStorage.getItem("refresh");
 
-  const response = await fetch(
-    `${API_URL}/auth/token/refresh/`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        refresh,
-      }),
+    if (!refresh) {
+      throw new Error("No refresh token found. Please log in again.");
     }
-  );
 
-  try {
+    const response = await fetch(`${API_URL}/auth/token/refresh/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh }),
+    });
+
     const data = await parseResponse(response);
+
+    if (!data?.access) {
+      throw new Error("The refresh endpoint did not return an access token.");
+    }
 
     localStorage.setItem("access", data.access);
 
+    // Some configurations rotate the refresh token.
+    if (data.refresh) {
+      localStorage.setItem("refresh", data.refresh);
+    }
+
     return data.access;
-  } catch (error) {
-    logoutUser();
-    throw error;
-  }
+  })()
+    .catch((error) => {
+      logoutUser();
+      throw error;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
 }
 
 /* =========================
-   PRODUCT MANAGEMENT
+   SHARED AUTHENTICATED REQUEST
+========================= */
+
+async function apiFetch(url, options = {}, retry = true) {
+  const headers = new Headers(options.headers || {});
+  const token = localStorage.getItem("access");
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  let response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  // Refresh only when the server returns 401, and retry once.
+  if (response.status === 401 && retry) {
+    try {
+      const newToken = await refreshAccessToken();
+      const retryHeaders = new Headers(options.headers || {});
+      retryHeaders.set("Authorization", `Bearer ${newToken}`);
+
+      response = await fetch(url, {
+        ...options,
+        headers: retryHeaders,
+      });
+    } catch (error) {
+      // Do not hide the original refresh error.
+      throw error;
+    }
+  }
+
+  return response;
+}
+
+async function apiRequest(url, options = {}) {
+  return parseResponse(await apiFetch(url, options));
+}
+
+/* =========================
+   REGISTER & LOGIN
+========================= */
+
+export async function registerUser(userData) {
+  return apiRequest(`${API_URL}/auth/register/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
+  });
+}
+
+export async function loginUser(username, password) {
+  const data = await apiRequest(`${API_URL}/auth/login/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (!data?.access || !data?.refresh) {
+    throw new Error("Login response did not contain both JWT tokens.");
+  }
+
+  localStorage.setItem("access", data.access);
+  localStorage.setItem("refresh", data.refresh);
+
+  return data;
+}
+
+/* =========================
+   CURRENT USER & PROFILE
+========================= */
+
+export async function getMe() {
+  return apiRequest(`${API_URL}/auth/me/`);
+}
+
+export async function getProfile() {
+  return apiRequest(`${API_URL}/auth/profile/`);
+}
+
+/* =========================
+   PRODUCTS
 ========================= */
 
 export async function getProducts() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/products/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/products/`);
 }
 
 export async function getProduct(id) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/products/${id}/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/products/${id}/`);
 }
 
 export async function createProduct(productData) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/products/`, {
+  return apiRequest(`${API_URL}/products/`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
     body: productData,
   });
-
-  return parseResponse(response);
 }
 
 export async function updateProduct(id, productData) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/products/${id}/`,
-    {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: productData,
-    }
-  );
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/products/${id}/`, {
+    method: "PUT",
+    body: productData,
+  });
 }
 
 export async function deleteProduct(id) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/products/${id}/`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  await parseResponse(response);
-
+  await apiRequest(`${API_URL}/products/${id}/`, {
+    method: "DELETE",
+  });
   return true;
 }
 
 /* =========================
-   INVENTORY MANAGEMENT
+   INVENTORY
 ========================= */
 
 export async function getInventory() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/inventory/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/inventory/`);
 }
 
 export async function addStock(id, quantity) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/inventory/${id}/add-stock/`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        quantity,
-      }),
-    }
-  );
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/inventory/${id}/add-stock/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ quantity }),
+  });
 }
 
 export async function reduceStock(id, quantity) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/inventory/${id}/reduce-stock/`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        quantity,
-      }),
-    }
-  );
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/inventory/${id}/reduce-stock/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ quantity }),
+  });
 }
 
 export async function getInventoryHistory(id) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/inventory/${id}/history/`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/inventory/${id}/history/`);
 }
 
 /* =========================
@@ -337,127 +242,50 @@ export async function getInventoryHistory(id) {
 ========================= */
 
 export async function getExpiryProducts() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/expiry/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/expiry/`);
 }
 
 export async function getExpiringSoonProducts() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/expiry/expiring-soon/`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/expiry/expiring-soon/`);
 }
 
 export async function getExpiredProducts() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/expiry/expired/`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/expiry/expired/`);
 }
 
 export async function getSafeProducts() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/expiry/safe/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/expiry/safe/`);
 }
 
 /* =========================
-   ALERTS & NOTIFICATIONS
+   ALERTS
 ========================= */
 
 export async function getAlerts(filters = {}) {
-  const token = localStorage.getItem("access");
-
   const params = new URLSearchParams();
 
-  if (filters.read) {
+  if (filters.read !== undefined && filters.read !== "") {
     params.append("read", filters.read);
   }
 
-  if (filters.type) {
-    params.append("type", filters.type);
-  }
+  if (filters.type) params.append("type", filters.type);
 
-  const queryString = params.toString();
-
-  const url = `${API_URL}/alerts/${
-    queryString ? `?${queryString}` : ""
-  }`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
+  const query = params.toString();
+  return apiRequest(
+    `${API_URL}/alerts/${query ? `?${query}` : ""}`
+  );
 }
 
 export async function markAlertAsRead(id) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/alerts/${id}/read/`,
-    {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/alerts/${id}/read/`, {
+    method: "PUT",
+  });
 }
 
 export async function dismissAlert(id) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/alerts/${id}/`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  await parseResponse(response);
-
+  await apiRequest(`${API_URL}/alerts/${id}/`, {
+    method: "DELETE",
+  });
   return true;
 }
 
@@ -466,166 +294,74 @@ export async function dismissAlert(id) {
 ========================= */
 
 export async function getPricing() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/pricing/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/pricing/`);
 }
 
 export async function getPricingSuggestions() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/pricing/suggestions/`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/pricing/suggestions/`);
 }
 
 export async function calculatePricing(productId) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/pricing/calculate/`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        product: productId,
-      }),
-    }
-  );
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/pricing/calculate/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ product: productId }),
+  });
 }
 
 export async function createPricing(pricingData) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/pricing/`, {
+  return apiRequest(`${API_URL}/pricing/`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(pricingData),
   });
-
-  return parseResponse(response);
 }
 
-export async function applyPricingDiscount(
-  id,
-  discountPercentage
-) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/pricing/${id}/apply/`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        discount_percentage: discountPercentage,
-      }),
-    }
-  );
-
-  return parseResponse(response);
+export async function applyPricingDiscount(id, discountPercentage) {
+  return apiRequest(`${API_URL}/pricing/${id}/apply/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      discount_percentage: discountPercentage,
+    }),
+  });
 }
 
 /* =========================
-   SALES MANAGEMENT
+   SALES
 ========================= */
 
 export async function getSales() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/sales/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/sales/`);
 }
 
 export async function getSale(id) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/sales/${id}/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
+  return apiRequest(`${API_URL}/sales/${id}/`);
 }
 
 export async function createSale(saleData) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/sales/`, {
+  return apiRequest(`${API_URL}/sales/`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(saleData),
   });
-
-  return parseResponse(response);
 }
 
 /* =========================
-   DASHBOARD & ANALYTICS
+   DASHBOARD
 ========================= */
 
 export async function getDashboard(period = "7") {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/dashboard/?period=${encodeURIComponent(
-      period
-    )}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+  return apiRequest(
+    `${API_URL}/dashboard/?period=${encodeURIComponent(period)}`
   );
-
-  return parseResponse(response);
 }
 
-
 /* =========================
-   MODULE 9 - REPORTS
+   REPORTS
 ========================= */
 
 async function getReport(endpoint, filters = {}) {
-  const token = localStorage.getItem("access");
   const params = new URLSearchParams();
 
   Object.entries(filters).forEach(([key, value]) => {
@@ -634,19 +370,10 @@ async function getReport(endpoint, filters = {}) {
     }
   });
 
-  const queryString = params.toString();
-  const url = `${API_URL}/reports/${endpoint}/${
-    queryString ? `?${queryString}` : ""
-  }`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return parseResponse(response);
+  const query = params.toString();
+  return apiRequest(
+    `${API_URL}/reports/${endpoint}/${query ? `?${query}` : ""}`
+  );
 }
 
 export function getSalesReport(filters = {}) {
@@ -676,7 +403,6 @@ export async function downloadSalesReport(format, filters = {}) {
     throw new Error("Unsupported report format.");
   }
 
-  const token = localStorage.getItem("access");
   const params = new URLSearchParams();
 
   Object.entries(filters).forEach(([key, value]) => {
@@ -685,17 +411,10 @@ export async function downloadSalesReport(format, filters = {}) {
     }
   });
 
-  const queryString = params.toString();
-  const url = `${API_URL}/reports/sales/export/${format}/${
-    queryString ? `?${queryString}` : ""
-  }`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const query = params.toString();
+  const response = await apiFetch(
+    `${API_URL}/reports/sales/export/${format}/${query ? `?${query}` : ""}`
+  );
 
   if (!response.ok) {
     await parseResponse(response);
@@ -712,53 +431,23 @@ export async function downloadSalesReport(format, filters = {}) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(downloadUrl);
+
+  // Delay revocation so the browser can begin the download.
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
 }
 
+/* =========================
+   ADMIN USER MANAGEMENT
+========================= */
+
 export async function getAdminUsers() {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(`${API_URL}/auth/admin/users/`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(
-      data.detail || data.message || "Failed to load admin users."
-    );
-  }
-
-  return data;
+  return apiRequest(`${API_URL}/auth/admin/users/`);
 }
 
 export async function updateAdminUser(userId, role) {
-  const token = localStorage.getItem("access");
-
-  const response = await fetch(
-    `${API_URL}/auth/admin/users/${userId}/`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({ role }),
-    }
-  );
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(
-      data.detail || data.message || "Failed to update user role."
-    );
-  }
-
-  return data;
+  return apiRequest(`${API_URL}/auth/admin/users/${userId}/`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ role }),
+  });
 }

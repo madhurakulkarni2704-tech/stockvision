@@ -1,9 +1,11 @@
+
 import { useCallback, useEffect, useState } from "react";
 import {
   dismissAlert,
   getAlerts,
   markAlertAsRead,
 } from "../services/api";
+import Sidebar from "../components/Sidebar";
 import "./Alerts.css";
 
 const ALERT_TYPES = [
@@ -49,11 +51,7 @@ function Alerts() {
   }, [filter, readFilter]);
 
   useEffect(() => {
-    const task = Promise.resolve().then(() => loadAlerts());
-
-    return () => {
-      void task;
-    };
+    loadAlerts();
   }, [loadAlerts]);
 
   const handleMarkRead = async (id) => {
@@ -62,7 +60,9 @@ function Alerts() {
 
       setAlerts((currentAlerts) =>
         currentAlerts.map((alert) =>
-          alert.id === id ? { ...alert, is_read: true } : alert
+          alert.id === id
+            ? { ...alert, is_read: true }
+            : alert
         )
       );
     } catch (err) {
@@ -82,123 +82,149 @@ function Alerts() {
     }
   };
 
-  const unreadCount = alerts.filter((alert) => !alert.is_read).length;
+  const unreadCount = alerts.filter(
+    (alert) => !alert.is_read
+  ).length;
 
   return (
     <div className="alerts-page">
-      <div className="alerts-container">
-        <div className="alerts-header">
-          <div>
-            <span className="alerts-label">NOTIFICATIONS</span>
-            <h1>Alerts</h1>
-            <p>Monitor stock, expiry, and product-related alerts.</p>
-          </div>
+      <Sidebar activePage="alerts" />
 
-          <div className="alerts-summary">
-            <strong>{unreadCount}</strong>
-            <span>Unread</span>
-          </div>
-        </div>
+      <main className="alerts-main">
+        <div className="alerts-container">
+          <header className="alerts-header">
+            <div>
+              <span className="alerts-label">NOTIFICATIONS</span>
+              <h1>Alerts</h1>
+              <p>
+                Monitor stock, expiry, and product-related alerts.
+              </p>
+            </div>
 
-        <div className="alerts-controls">
-          <div className="alert-type-filters">
-            {ALERT_TYPES.map((type) => (
+            <div className="alerts-summary">
+              <strong>{unreadCount}</strong>
+              <span>Unread</span>
+            </div>
+          </header>
+
+          <section className="alerts-controls">
+            <div className="alert-type-filters">
+              {ALERT_TYPES.map((type) => (
+                <button
+                  type="button"
+                  key={type}
+                  className={`alert-filter-button ${
+                    filter === type ? "active" : ""
+                  }`}
+                  onClick={() => setFilter(type)}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+
+            <div className="alert-read-filter">
               <button
-                key={type}
-                className={`alert-filter-button ${
-                  filter === type ? "active" : ""
-                }`}
-                onClick={() => setFilter(type)}
+                type="button"
+                className={readFilter === "ALL" ? "active" : ""}
+                onClick={() => setReadFilter("ALL")}
               >
-                {type}
+                All
               </button>
-            ))}
-          </div>
 
-          <div className="alert-read-filter">
-            <button
-              className={readFilter === "ALL" ? "active" : ""}
-              onClick={() => setReadFilter("ALL")}
-            >
-              All
-            </button>
-
-            <button
-              className={readFilter === "UNREAD" ? "active" : ""}
-              onClick={() => setReadFilter("UNREAD")}
-            >
-              Unread
-            </button>
-
-            <button
-              className={readFilter === "READ" ? "active" : ""}
-              onClick={() => setReadFilter("READ")}
-            >
-              Read
-            </button>
-          </div>
-        </div>
-
-        {error && <div className="alerts-error">{error}</div>}
-
-        {loading ? (
-          <div className="alerts-state">Loading alerts...</div>
-        ) : alerts.length === 0 ? (
-          <div className="alerts-empty">
-            <div className="alerts-empty-icon">✓</div>
-            <h2>No alerts found</h2>
-            <p>There are no alerts matching the selected filters.</p>
-          </div>
-        ) : (
-          <div className="alerts-list">
-            {alerts.map((alert) => (
-              <div
-                key={alert.id}
-                className={`alert-card ${
-                  alert.is_read ? "read" : "unread"
-                }`}
+              <button
+                type="button"
+                className={readFilter === "UNREAD" ? "active" : ""}
+                onClick={() => setReadFilter("UNREAD")}
               >
-                <div className="alert-card-indicator"></div>
+                Unread
+              </button>
 
-                <div className="alert-card-content">
-                  <div className="alert-card-top">
-                    <span className="alert-type">{alert.alert_type}</span>
+              <button
+                type="button"
+                className={readFilter === "READ" ? "active" : ""}
+                onClick={() => setReadFilter("READ")}
+              >
+                Read
+              </button>
+            </div>
+          </section>
 
-                    {!alert.is_read && (
-                      <span className="unread-badge">UNREAD</span>
-                    )}
+          {error && (
+            <div className="alerts-error" role="alert">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="alerts-state">
+              Loading alerts...
+            </div>
+          ) : alerts.length === 0 ? (
+            <div className="alerts-empty">
+              <div className="alerts-empty-icon">✓</div>
+              <h2>No alerts found</h2>
+              <p>
+                There are no alerts matching the selected filters.
+              </p>
+            </div>
+          ) : (
+            <section className="alerts-list">
+              {alerts.map((alert) => (
+                <article
+                  key={alert.id}
+                  className={`alert-card ${
+                    alert.is_read ? "read" : "unread"
+                  }`}
+                >
+                  <div className="alert-card-indicator" />
+
+                  <div className="alert-card-content">
+                    <div className="alert-card-top">
+                      <span className="alert-type">
+                        {alert.alert_type}
+                      </span>
+
+                      {!alert.is_read && (
+                        <span className="unread-badge">
+                          UNREAD
+                        </span>
+                      )}
+                    </div>
+
+                    <h3>{alert.product_name}</h3>
+                    <p>{alert.message}</p>
+
+                    <span className="alert-product-sku">
+                      SKU: {alert.product_sku || "—"}
+                    </span>
                   </div>
 
-                  <h3>{alert.product_name}</h3>
-                  <p>{alert.message}</p>
+                  <div className="alert-card-actions">
+                    {!alert.is_read && (
+                      <button
+                        type="button"
+                        className="alert-read-button"
+                        onClick={() => handleMarkRead(alert.id)}
+                      >
+                        Mark Read
+                      </button>
+                    )}
 
-                  <span className="alert-product-sku">
-                    SKU: {alert.product_sku}
-                  </span>
-                </div>
-
-                <div className="alert-card-actions">
-                  {!alert.is_read && (
                     <button
-                      className="alert-read-button"
-                      onClick={() => handleMarkRead(alert.id)}
+                      type="button"
+                      className="alert-dismiss-button"
+                      onClick={() => handleDismiss(alert.id)}
                     >
-                      Mark Read
+                      Dismiss
                     </button>
-                  )}
-
-                  <button
-                    className="alert-dismiss-button"
-                    onClick={() => handleDismiss(alert.id)}
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                  </div>
+                </article>
+              ))}
+            </section>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

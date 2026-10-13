@@ -1,11 +1,28 @@
 
-.admin-management {
+/* ================================
+   PAGE LAYOUT
+================================ */
+
+.admin-management-page {
+  display: flex;
+  min-height: 100vh;
   width: 100%;
+  background: #f6f7fb;
+  color: #172033;
+}
+
+.admin-management {
+  flex: 1;
   min-width: 0;
+  width: 100%;
   padding: 32px;
   color: #172033;
   box-sizing: border-box;
 }
+
+/* ================================
+   PAGE HEADER
+================================ */
 
 .admin-page-header {
   display: flex;
@@ -25,8 +42,10 @@
 
 .admin-page-header h1 {
   margin: 0;
+  color: #172033;
   font-size: clamp(25px, 3vw, 32px);
   letter-spacing: -0.8px;
+  line-height: 1.25;
 }
 
 .admin-subtitle,
@@ -37,6 +56,10 @@
   line-height: 1.6;
 }
 
+/* ================================
+   BUTTONS
+================================ */
+
 .admin-refresh-button,
 .admin-save-button {
   border: 0;
@@ -45,18 +68,41 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .admin-refresh-button {
-  color: #fff;
+  color: #ffffff;
   background: #2563eb;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.admin-refresh-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.admin-save-button {
+  color: #ffffff;
+  background: #172554;
   white-space: nowrap;
 }
 
-.admin-refresh-button:hover {
-  background: #1d4ed8;
+.admin-save-button:hover:not(:disabled) {
+  background: #1e40af;
 }
+
+.admin-save-button:disabled,
+.admin-refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* ================================
+   SUMMARY CARDS
+================================ */
 
 .admin-summary-grid {
   display: grid;
@@ -69,10 +115,11 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
   padding: 22px;
   border: 1px solid #e7ebf2;
   border-radius: 14px;
-  background: #fff;
+  background: #ffffff;
   box-shadow: 0 3px 12px rgb(15 23 42 / 3%);
 }
 
@@ -93,11 +140,16 @@
   font-size: 12px;
 }
 
+/* ================================
+   USERS PANEL
+================================ */
+
 .admin-users-panel {
+  min-width: 0;
   overflow: hidden;
   border: 1px solid #e7ebf2;
   border-radius: 14px;
-  background: #fff;
+  background: #ffffff;
   box-shadow: 0 3px 12px rgb(15 23 42 / 3%);
 }
 
@@ -111,6 +163,7 @@
 
 .admin-panel-heading h2 {
   margin: 0;
+  color: #172033;
   font-size: 18px;
 }
 
@@ -126,7 +179,12 @@
   background: #f1f5f9;
   font-size: 12px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
+
+/* ================================
+   TOOLBAR
+================================ */
 
 .admin-toolbar {
   display: flex;
@@ -143,8 +201,8 @@
   border-radius: 8px;
   outline: none;
   color: #334155;
-  background: #fff;
-  font: inherit;
+  background: #ffffff;
+  font-family: inherit;
   font-size: 13px;
   box-sizing: border-box;
 }
@@ -161,9 +219,19 @@
   box-shadow: 0 0 0 3px rgb(59 130 246 / 12%);
 }
 
+.admin-toolbar select,
+.admin-action-cell select {
+  cursor: pointer;
+}
+
+/* ================================
+   TABLE
+================================ */
+
 .admin-table-wrapper {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-users-table {
@@ -194,6 +262,10 @@
   background: #fafcff;
 }
 
+/* ================================
+   USER CELL
+================================ */
+
 .admin-user-cell {
   display: flex;
   align-items: center;
@@ -219,6 +291,7 @@
   display: block;
   color: #172033;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .admin-user-cell small {
@@ -227,6 +300,10 @@
   color: #94a3b8;
   font-size: 11px;
 }
+
+/* ================================
+   ROLE BADGES
+================================ */
 
 .admin-role-badge {
   display: inline-block;
@@ -248,6 +325,10 @@
   background: #d1fae5;
 }
 
+/* ================================
+   ACTIONS
+================================ */
+
 .admin-action-cell {
   display: flex;
   align-items: center;
@@ -259,21 +340,6 @@
   min-width: 125px;
 }
 
-.admin-save-button {
-  color: #fff;
-  background: #172554;
-}
-
-.admin-save-button:hover:not(:disabled) {
-  background: #1e40af;
-}
-
-.admin-save-button:disabled,
-.admin-refresh-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
 .admin-empty-state {
   padding: 32px 24px;
   color: #64748b;
@@ -281,12 +347,18 @@
   font-size: 14px;
 }
 
+/* ================================
+   NOTICES
+================================ */
+
 .admin-notice {
   margin-bottom: 18px;
   padding: 13px 16px;
   border: 1px solid transparent;
   border-radius: 9px;
   font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .admin-error {
@@ -301,12 +373,43 @@
   background: #ecfdf5;
 }
 
+/* ================================
+   SECURITY NOTE
+================================ */
+
 .admin-security-note {
   margin: 18px 0 0;
   color: #64748b;
   font-size: 12px;
   line-height: 1.6;
 }
+
+/* ================================
+   TABLET
+================================ */
+
+@media (max-width: 1000px) {
+  .admin-management {
+    padding: 24px 20px;
+  }
+
+  .admin-summary-grid {
+    gap: 12px;
+  }
+
+  .admin-summary-card {
+    padding: 18px;
+  }
+
+  .admin-users-table th,
+  .admin-users-table td {
+    padding: 13px 16px;
+  }
+}
+
+/* ================================
+   MOBILE
+================================ */
 
 @media (max-width: 800px) {
   .admin-management {
@@ -320,6 +423,11 @@
 
   .admin-page-header {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-refresh-button {
+    align-self: flex-start;
   }
 
   .admin-panel-heading {
@@ -330,6 +438,10 @@
     padding: 0 16px 16px;
   }
 
+  .admin-users-table {
+    min-width: 720px;
+  }
+
   .admin-users-table th,
   .admin-users-table td {
     padding: 13px 16px;
@@ -337,12 +449,30 @@
 }
 
 @media (max-width: 480px) {
+  .admin-management {
+    padding: 18px 12px;
+  }
+
   .admin-toolbar {
     flex-direction: column;
+  }
+
+  .admin-toolbar input,
+  .admin-toolbar select {
+    width: 100%;
   }
 
   .admin-panel-heading {
     align-items: flex-start;
     flex-direction: column;
+    gap: 12px;
+  }
+
+  .admin-summary-card {
+    padding: 18px;
+  }
+
+  .admin-page-header h1 {
+    font-size: 25px;
   }
 }
