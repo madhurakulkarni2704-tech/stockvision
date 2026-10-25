@@ -696,5 +696,5 @@ class DashboardViewTests(TestCase):
 
         self.assertEqual(
             filters["end_date"],
-            date.today(),
+            timezone.localdate(),
         )

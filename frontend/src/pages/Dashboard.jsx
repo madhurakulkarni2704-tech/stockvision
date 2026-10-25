@@ -1,3 +1,4 @@
+
 import "./Dashboard.css";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -26,37 +27,34 @@ import {
   logoutUser,
 } from "../services/api";
 
-
 /* =========================================================
    HELPERS
    ========================================================= */
 
 function formatCurrency(value) {
-  const number = Number(value || 0);
+  const number = Number(value ?? 0);
 
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 2,
-  }).format(number);
+  }).format(Number.isFinite(number) ? number : 0);
 }
-
 
 function formatNumber(value) {
-  return new Intl.NumberFormat("en-IN").format(Number(value || 0));
+  const number = Number(value ?? 0);
+
+  return new Intl.NumberFormat("en-IN").format(
+    Number.isFinite(number) ? number : 0
+  );
 }
 
-
 function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
+  if (!value) return "-";
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
+  if (Number.isNaN(date.getTime())) return String(value);
 
   return date.toLocaleDateString("en-IN", {
     day: "2-digit",
@@ -64,17 +62,12 @@ function formatDate(value) {
   });
 }
 
-
 function formatMonth(value) {
-  if (!value) {
-    return "-";
-  }
+  if (!value) return "-";
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
+  if (Number.isNaN(date.getTime())) return String(value);
 
   return date.toLocaleDateString("en-IN", {
     month: "short",
@@ -82,8 +75,6 @@ function formatMonth(value) {
   });
 }
 
-
-/* FIX: /me (the logged-in user) is checked first, then profile. */
 function getDisplayName(user, profile) {
   const fullName = [user?.first_name, user?.last_name]
     .filter(Boolean)
@@ -91,9 +82,9 @@ function getDisplayName(user, profile) {
     .trim();
 
   return (
+    fullName ||
     user?.username ||
     user?.name ||
-    fullName ||
     profile?.user?.username ||
     profile?.username ||
     profile?.name ||
@@ -103,17 +94,22 @@ function getDisplayName(user, profile) {
   );
 }
 
-
-/* FIX: same (user, profile) order as getDisplayName. */
 function getEmail(user, profile) {
   return user?.email || profile?.email || profile?.user?.email || "";
 }
-
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function getUserRole(user, profile) {
+  return (
+    user?.role ||
+    profile?.role ||
+    profile?.user?.role ||
+    ""
+  ).toString().toUpperCase();
+}
 
 /* =========================================================
    COLORS
@@ -132,13 +128,11 @@ const COLORS = {
   gray: "#64748b",
 };
 
-
 const EXPIRY_COLORS = {
   SAFE: COLORS.green,
   "EXPIRING SOON": COLORS.orange,
   EXPIRED: COLORS.red,
 };
-
 
 /* =========================================================
    CUSTOM TOOLTIP
@@ -172,7 +166,7 @@ function SalesTooltip({ active, payload, label }) {
 
       {payload.map((entry, index) => (
         <p
-          key={index}
+          key={`${entry.name || "series"}-${index}`}
           style={{
             margin: "3px 0",
             fontSize: "11px",
@@ -180,7 +174,7 @@ function SalesTooltip({ active, payload, label }) {
           }}
         >
           {entry.name}:{" "}
-          {entry.name === "Revenue" || entry.name === "Sales"
+          {["Revenue", "Sales"].includes(entry.name)
             ? formatCurrency(entry.value)
             : formatNumber(entry.value)}
         </p>
@@ -188,7 +182,6 @@ function SalesTooltip({ active, payload, label }) {
     </div>
   );
 }
-
 
 /* =========================================================
    DASHBOARD
@@ -200,7 +193,6 @@ function Dashboard() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [alerts, setAlerts] = useState([]);
-
   const [dashboard, setDashboard] = useState(null);
 
   const [loading, setLoading] = useState(true);
@@ -209,21 +201,70 @@ function Dashboard() {
   const [analyticsPeriod, setAnalyticsPeriod] = useState("7");
   const [filterLoading, setFilterLoading] = useState(false);
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  /* =======================================================
+     NAVIGATION
+     ======================================================= */
+
+  const navigateTo = (path) => {
+    setSidebarOpen(false);
+    navigate(path);
+  };
+
+  const handleLogout = async () => {
+    setSidebarOpen(false);
+
+    try {
+      await logoutUser();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("access");
+      localStorage.removeItem("refresh");
+      navigate("/login", { replace: true });
+    }
+  };
+
+  /* =======================================================
+     MOBILE SIDEBAR ACCESSIBILITY
+     ======================================================= */
+
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [sidebarOpen]);
 
   /* =======================================================
      LOAD USER + PROFILE + ALERTS
      ======================================================= */
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadUserData() {
-      /* FIX: allSettled, so one failing request (e.g. alerts or profile)
-         can no longer stop /me from being saved. */
       const [meResult, profileResult, alertsResult] =
-        await Promise.allSettled([getMe(), getProfile(), getAlerts()]);
+        await Promise.allSettled([
+          getMe(),
+          getProfile(),
+          getAlerts(),
+        ]);
+
+      if (!isMounted) return;
 
       if (meResult.status === "fulfilled") {
         const meData = meResult.value;
-        console.log("ME RESPONSE:", meData);
         setUser(meData?.user || meData?.data || meData);
       } else {
         console.error("getMe failed:", meResult.reason);
@@ -231,7 +272,6 @@ function Dashboard() {
 
       if (profileResult.status === "fulfilled") {
         const profileData = profileResult.value;
-        console.log("PROFILE RESPONSE:", profileData);
         setProfile(profileData?.data || profileData);
       } else {
         console.error("getProfile failed:", profileResult.reason);
@@ -249,73 +289,75 @@ function Dashboard() {
         }
       } else {
         console.error("getAlerts failed:", alertsResult.reason);
+        setAlerts([]);
       }
     }
 
     loadUserData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-
   /* =======================================================
-     LOAD DASHBOARD
+     LOAD DASHBOARD ANALYTICS
      ======================================================= */
 
   useEffect(() => {
-    async function loadDashboard() {
-      try {
-        if (analyticsPeriod === "7") {
-          setLoading(true);
-        } else {
-          setFilterLoading(true);
-        }
+    let isMounted = true;
 
+    async function loadDashboard() {
+      if (analyticsPeriod === "7") {
+        setLoading(true);
+      } else {
+        setFilterLoading(true);
+      }
+
+      setDashboardError("");
+
+      try {
         const data = await getDashboard(analyticsPeriod);
 
+        if (!isMounted) return;
+
         setDashboard(data);
-        setDashboardError("");
       } catch (error) {
+        if (!isMounted) return;
+
         console.error("Dashboard analytics loading error:", error);
 
         setDashboardError(
           error?.message || "Unable to load dashboard analytics."
         );
       } finally {
-        setLoading(false);
-        setFilterLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          setFilterLoading(false);
+        }
       }
     }
 
     loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
   }, [analyticsPeriod]);
-
-
-  /* =======================================================
-     LOGOUT
-     ======================================================= */
-
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      localStorage.removeItem("access");
-      localStorage.removeItem("refresh");
-      navigate("/login");
-    }
-  };
-
 
   /* =======================================================
      DATA
      ======================================================= */
 
-  /* FIX: argument order now matches the function signatures. */
   const displayName = getDisplayName(user, profile);
   const email = getEmail(user, profile);
+  const userRole = getUserRole(user, profile);
+
+  const isAdmin = userRole === "ADMIN";
 
   const statistics = dashboard?.statistics || {};
   const charts = dashboard?.charts || {};
+  const tables = dashboard?.tables || {};
 
   const dailySales = safeArray(charts.daily_sales);
   const weeklySales = safeArray(charts.weekly_sales);
@@ -325,10 +367,9 @@ function Dashboard() {
   const expiryTrends = safeArray(charts.expiry_trends);
   const discountUsage = safeArray(charts.discount_usage);
 
-
-  /* =======================================================
-     FILTER LABEL
-     ======================================================= */
+  const lowStockItems = safeArray(tables.low_stock);
+  const expiringSoonItems = safeArray(tables.expiring_soon);
+  const recentSales = safeArray(tables.recent_sales);
 
   const periodLabels = {
     "7": "Last 7 days",
@@ -338,20 +379,22 @@ function Dashboard() {
     all: "All available data",
   };
 
-
   /* =======================================================
      LOADING
      ======================================================= */
 
   if (loading) {
     return (
-      <div className="dashboard-loading">
-        <div className="loading-spinner"></div>
+      <div
+        className="dashboard-loading"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="loading-spinner" aria-hidden="true" />
         <p>Loading dashboard...</p>
       </div>
     );
   }
-
 
   /* =======================================================
      RENDER
@@ -359,190 +402,217 @@ function Dashboard() {
 
   return (
     <div className="dashboard-page">
+      {/* MOBILE SIDEBAR BACKDROP */}
 
+      {sidebarOpen && (
+        <button
+          className="sidebar-backdrop"
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-      {/* =====================================================
-          SIDEBAR
-          ===================================================== */}
+      {/* SIDEBAR */}
 
-      <aside className="dashboard-sidebar">
-
+      <aside
+        id="dashboard-navigation"
+        className={`dashboard-sidebar ${
+          sidebarOpen ? "sidebar-open" : ""
+        }`}
+        aria-label="Main navigation"
+        aria-hidden={undefined}
+      >
         <div className="sidebar-brand">
-
-          <div className="sidebar-logo">S</div>
+          <div className="sidebar-logo" aria-hidden="true">
+            S
+          </div>
 
           <div>
             <h2>StockVision</h2>
             <span>Inventory Management</span>
           </div>
-
         </div>
 
-
-        <nav className="sidebar-navigation">
-
+        <nav className="sidebar-navigation" aria-label="Main menu">
           <button
+            type="button"
             className="sidebar-nav-item active"
-            onClick={() => navigate("/dashboard")}
+            aria-current="page"
+            onClick={() => navigateTo("/dashboard")}
           >
-            <span className="sidebar-icon">D</span>
+            <span className="sidebar-icon" aria-hidden="true">D</span>
             <span>Dashboard</span>
           </button>
 
           <button
+            type="button"
             className="sidebar-nav-item"
-            onClick={() => navigate("/products")}
+            onClick={() => navigateTo("/products")}
           >
-            <span className="sidebar-icon">P</span>
+            <span className="sidebar-icon" aria-hidden="true">P</span>
             <span>Products</span>
           </button>
 
           <button
+            type="button"
             className="sidebar-nav-item"
-            onClick={() => navigate("/inventory")}
+            onClick={() => navigateTo("/inventory")}
           >
-            <span className="sidebar-icon">I</span>
+            <span className="sidebar-icon" aria-hidden="true">I</span>
             <span>Inventory</span>
           </button>
 
           <button
+            type="button"
             className="sidebar-nav-item"
-            onClick={() => navigate("/sales")}
+            onClick={() => navigateTo("/sales")}
           >
-            <span className="sidebar-icon">S</span>
+            <span className="sidebar-icon" aria-hidden="true">S</span>
             <span>Sales</span>
           </button>
 
           <button
+            type="button"
             className="sidebar-nav-item"
-            onClick={() => navigate("/reports")}
+            onClick={() => navigateTo("/reports")}
           >
-            <span className="sidebar-icon">R</span>
+            <span className="sidebar-icon" aria-hidden="true">R</span>
             <span>Reports</span>
           </button>
 
           <button
+            type="button"
             className="sidebar-nav-item"
-            onClick={() => navigate("/expiry")}
+            onClick={() => navigateTo("/expiry")}
           >
-            <span className="sidebar-icon">E</span>
+            <span className="sidebar-icon" aria-hidden="true">E</span>
             <span>Expiry</span>
           </button>
 
           <button
+            type="button"
             className="sidebar-nav-item"
-            onClick={() => navigate("/pricing")}
+            onClick={() => navigateTo("/pricing")}
           >
-            <span className="sidebar-icon">₹</span>
+            <span className="sidebar-icon" aria-hidden="true">₹</span>
             <span>Pricing</span>
           </button>
 
           <button
+            type="button"
             className="sidebar-nav-item"
-            onClick={() => navigate("/alerts")}
+            onClick={() => navigateTo("/alerts")}
           >
-            <span className="sidebar-icon">A</span>
+            <span className="sidebar-icon" aria-hidden="true">A</span>
             <span>Alerts</span>
           </button>
 
           <button
+            type="button"
             className="sidebar-nav-item"
-            onClick={() => navigate("/profile")}
+            onClick={() => navigateTo("/profile")}
           >
-            <span className="sidebar-icon">U</span>
+            <span className="sidebar-icon" aria-hidden="true">U</span>
             <span>Profile</span>
           </button>
 
-          
-            {user?.role === "ADMIN" && (
-          <button
+          {isAdmin && (
+            <button
+              type="button"
               className="sidebar-nav-item"
-              onClick={() => navigate("/admin-management")}
+              onClick={() => navigateTo("/admin-management")}
             >
-            <span className="sidebar-icon">A</span>
-            <span>Admin Management</span>
-          </button>
+              <span className="sidebar-icon" aria-hidden="true">A</span>
+              <span>Admin Management</span>
+            </button>
           )}
-
         </nav>
 
-
-        <div className="sidebar-divider"></div>
-
+        <div className="sidebar-divider" />
 
         <div className="sidebar-promo">
-
-          <div className="promo-illustration">
-            <div className="promo-box box-one"></div>
-            <div className="promo-box box-two"></div>
-            <div className="promo-box box-three"></div>
+          <div className="promo-illustration" aria-hidden="true">
+            <div className="promo-box box-one" />
+            <div className="promo-box box-two" />
+            <div className="promo-box box-three" />
             <div className="promo-chart">╱╲╱</div>
           </div>
 
           <h3>Manage your inventory smarter</h3>
+          <p>
+            Track products, stock, sales and pricing from one place.
+          </p>
 
-          <p>Track products, stock, sales and pricing from one place.</p>
-
-          <div className="promo-dots">
-            <span className="active"></span>
-            <span></span>
-            <span></span>
+          <div className="promo-dots" aria-hidden="true">
+            <span className="active" />
+            <span />
+            <span />
           </div>
-
         </div>
-
       </aside>
 
-
-      {/* =====================================================
-          MAIN
-          ===================================================== */}
+      {/* MAIN */}
 
       <main className="dashboard-main">
-
-
-        {/* ===================================================
-            HEADER
-            =================================================== */}
+        {/* HEADER */}
 
         <header className="dashboard-header">
-
           <div className="header-left">
-
-            <button className="menu-button" type="button">
-              ☰
+            <button
+              className="menu-button"
+              type="button"
+              aria-label={
+                sidebarOpen
+                  ? "Close navigation menu"
+                  : "Open navigation menu"
+              }
+              aria-controls="dashboard-navigation"
+              aria-expanded={sidebarOpen}
+              onClick={() => setSidebarOpen((open) => !open)}
+            >
+              {sidebarOpen ? "×" : "☰"}
             </button>
 
             <div>
               <strong>Dashboard</strong>
             </div>
-
           </div>
 
-
           <div className="header-right">
-
             <button
               className="notification-button"
               type="button"
-              onClick={() => navigate("/alerts")}
+              aria-label={`Open alerts${
+                alerts.length ? `, ${alerts.length} alerts` : ""
+              }`}
+              onClick={() => navigateTo("/alerts")}
             >
               ♧
               {alerts.length > 0 && (
-                <span className="notification-dot"></span>
+                <span
+                  className="notification-dot"
+                  aria-hidden="true"
+                />
               )}
             </button>
 
-
-            <div className="header-divider"></div>
-
+            <div className="header-divider" />
 
             <div
               className="header-user"
-              onClick={() => navigate("/profile")}
+              role="button"
+              tabIndex={0}
+              aria-label="Open profile"
+              onClick={() => navigateTo("/profile")}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  navigateTo("/profile");
+                }
+              }}
             >
-
-              <div className="header-avatar">
+              <div className="header-avatar" aria-hidden="true">
                 {displayName.charAt(0).toUpperCase()}
               </div>
 
@@ -551,36 +621,29 @@ function Dashboard() {
                 <span>{email}</span>
               </div>
 
-              <span className="header-arrow">⌄</span>
-
+              <span className="header-arrow" aria-hidden="true">
+                ⌄
+              </span>
             </div>
 
-
-            <button className="header-logout" onClick={handleLogout}>
-              ↪
+            <button
+              className="header-logout"
+              type="button"
+              onClick={handleLogout}
+            >
+              <span aria-hidden="true">↪</span>
               <span>Logout</span>
             </button>
-
           </div>
-
         </header>
 
-
-        {/* ===================================================
-            CONTENT
-            =================================================== */}
+        {/* CONTENT */}
 
         <div className="dashboard-content">
-
-
-          {/* =================================================
-              WELCOME
-              ================================================= */}
+          {/* WELCOME */}
 
           <section className="dashboard-welcome">
-
             <div>
-
               <span className="welcome-label">
                 INVENTORY MANAGEMENT
               </span>
@@ -593,25 +656,22 @@ function Dashboard() {
                 Manage your products, inventory, sales and pricing from one
                 place.
               </p>
-
             </div>
 
             <div className="role-badge">
-              <span className="role-dot"></span>
-              Inventory Manager
+              <span className="role-dot" />
+              {userRole || "Inventory Manager"}
             </div>
-
           </section>
 
+          {/* STATISTICS */}
 
-          {/* =================================================
-              STATISTICS
-              ================================================= */}
-
-          <section className="dashboard-stats">
-
+          <section
+            className="dashboard-stats"
+            aria-label="Inventory statistics"
+          >
             <div className="stat-card">
-              <div className="stat-icon purple">P</div>
+              <div className="stat-icon purple" aria-hidden="true">P</div>
               <div>
                 <p>Total Products</p>
                 <h2>{formatNumber(statistics.total_products)}</h2>
@@ -620,7 +680,7 @@ function Dashboard() {
             </div>
 
             <div className="stat-card">
-              <div className="stat-icon blue">I</div>
+              <div className="stat-icon blue" aria-hidden="true">I</div>
               <div>
                 <p>Total Stock</p>
                 <h2>{formatNumber(statistics.total_stock)}</h2>
@@ -629,7 +689,7 @@ function Dashboard() {
             </div>
 
             <div className="stat-card">
-              <div className="stat-icon orange">L</div>
+              <div className="stat-icon orange" aria-hidden="true">L</div>
               <div>
                 <p>Low Stock</p>
                 <h2>{formatNumber(statistics.low_stock_items)}</h2>
@@ -638,7 +698,7 @@ function Dashboard() {
             </div>
 
             <div className="stat-card">
-              <div className="stat-icon green">₹</div>
+              <div className="stat-icon green" aria-hidden="true">₹</div>
               <div>
                 <p>Today's Sales</p>
                 <h2>{formatCurrency(statistics.todays_sales)}</h2>
@@ -647,7 +707,7 @@ function Dashboard() {
             </div>
 
             <div className="stat-card">
-              <div className="stat-icon orange">E</div>
+              <div className="stat-icon orange" aria-hidden="true">E</div>
               <div>
                 <p>Expiring Soon</p>
                 <h2>{formatNumber(statistics.expiring_soon)}</h2>
@@ -656,7 +716,7 @@ function Dashboard() {
             </div>
 
             <div className="stat-card">
-              <div className="stat-icon red">X</div>
+              <div className="stat-icon red" aria-hidden="true">X</div>
               <div>
                 <p>Expired Products</p>
                 <h2>{formatNumber(statistics.expired_products)}</h2>
@@ -665,7 +725,7 @@ function Dashboard() {
             </div>
 
             <div className="stat-card">
-              <div className="stat-icon green">₹</div>
+              <div className="stat-icon green" aria-hidden="true">₹</div>
               <div>
                 <p>Total Sales</p>
                 <h2>{formatCurrency(statistics.total_sales)}</h2>
@@ -674,38 +734,30 @@ function Dashboard() {
             </div>
 
             <div className="stat-card">
-              <div className="stat-icon purple">%</div>
+              <div className="stat-icon purple" aria-hidden="true">%</div>
               <div>
                 <p>Active Discounts</p>
                 <h2>{formatNumber(statistics.active_discounts)}</h2>
                 <span>Active promotions</span>
               </div>
             </div>
-
           </section>
 
-
-          {/* =================================================
-              FILTER
-              ================================================= */}
+          {/* FILTER */}
 
           <section className="dashboard-panel dashboard-filter-panel">
-
             <div className="dashboard-filter-content">
-
               <div>
-
                 <span className="filter-label">ANALYTICS PERIOD</span>
-
                 <h2>Dashboard Analytics</h2>
-
-                <p>View sales and stock trends for a selected period.</p>
-
+                <p>
+                  View sales and stock trends for a selected period.
+                </p>
               </div>
 
               <div className="dashboard-filter-control">
-
                 <select
+                  aria-label="Analytics period"
                   value={analyticsPeriod}
                   onChange={(event) =>
                     setAnalyticsPeriod(event.target.value)
@@ -720,17 +772,18 @@ function Dashboard() {
                 </select>
 
                 {filterLoading && (
-                  <span className="dashboard-filter-loading">
+                  <span
+                    className="dashboard-filter-loading"
+                    role="status"
+                    aria-live="polite"
+                  >
                     Updating...
                   </span>
                 )}
-
               </div>
-
             </div>
 
             <div className="dashboard-filter-summary">
-
               Showing: <strong>{periodLabels[analyticsPeriod]}</strong>
 
               {dashboard?.filters?.start_date &&
@@ -742,44 +795,33 @@ function Dashboard() {
                     {dashboard.filters.end_date})
                   </>
                 )}
-
             </div>
-
           </section>
 
-
-          {/* =================================================
-              ERROR
-              ================================================= */}
+          {/* ERROR */}
 
           {dashboardError && (
-            <section className="dashboard-panel dashboard-error-panel">
-
+            <section
+              className="dashboard-panel dashboard-error-panel"
+              role="alert"
+            >
               <div className="error-box">
-
-                <div className="error-icon">!</div>
-
+                <div className="error-icon" aria-hidden="true">!</div>
                 <div>
                   <h3>Dashboard analytics unavailable</h3>
                   <p>{dashboardError}</p>
                 </div>
-
               </div>
-
             </section>
           )}
 
-
-          {/* =================================================
-              DAILY SALES
-              ================================================= */}
+          {/* DAILY SALES */}
 
           <section className="dashboard-panel">
-
             <div className="panel-header">
               <div>
                 <div className="panel-title-row">
-                  <span className="panel-icon">₹</span>
+                  <span className="panel-icon" aria-hidden="true">₹</span>
                   <h2>Daily Sales</h2>
                 </div>
                 <p>Sales performance for the selected period</p>
@@ -787,63 +829,43 @@ function Dashboard() {
             </div>
 
             <div className="analytics-chart daily-sales-recharts">
-
               {dailySales.length === 0 ? (
-
                 <div className="dashboard-empty-state">
                   No sales recorded for this period.
                 </div>
-
               ) : (
-
                 <ResponsiveContainer width="100%" height="100%">
-
                   <BarChart
                     data={dailySales}
                     margin={{ top: 15, right: 20, left: 5, bottom: 5 }}
                   >
-
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                    />
                     <XAxis dataKey="date" tickFormatter={formatDate} />
-
                     <YAxis tickFormatter={(value) => `₹${value}`} />
-
                     <Tooltip content={<SalesTooltip />} />
-
                     <Bar
                       dataKey="total"
                       name="Sales"
                       fill={COLORS.primary}
                       radius={[5, 5, 0, 0]}
                     />
-
                   </BarChart>
-
                 </ResponsiveContainer>
-
               )}
-
             </div>
-
           </section>
 
-
-          {/* =================================================
-              WEEKLY + MONTHLY
-              ================================================= */}
+          {/* WEEKLY + MONTHLY */}
 
           <section className="dashboard-grid dashboard-module8-two-column">
-
-
-            {/* WEEKLY */}
-
             <div className="dashboard-panel">
-
               <div className="panel-header">
                 <div>
                   <div className="panel-title-row">
-                    <span className="panel-icon">W</span>
+                    <span className="panel-icon" aria-hidden="true">W</span>
                     <h2>Weekly Sales</h2>
                   </div>
                   <p>Weekly sales performance</p>
@@ -851,56 +873,40 @@ function Dashboard() {
               </div>
 
               <div className="analytics-chart">
-
                 {weeklySales.length === 0 ? (
-
                   <div className="dashboard-empty-state">
                     No weekly sales data.
                   </div>
-
                 ) : (
-
                   <ResponsiveContainer width="100%" height="100%">
-
                     <BarChart
                       data={weeklySales}
                       margin={{ top: 10, right: 15, left: 0, bottom: 5 }}
                     >
-
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                      />
                       <XAxis dataKey="week" tickFormatter={formatDate} />
-
                       <YAxis tickFormatter={(value) => `₹${value}`} />
-
                       <Tooltip content={<SalesTooltip />} />
-
                       <Bar
                         dataKey="total"
                         name="Sales"
                         fill={COLORS.blue}
                         radius={[5, 5, 0, 0]}
                       />
-
                     </BarChart>
-
                   </ResponsiveContainer>
-
                 )}
-
               </div>
-
             </div>
 
-
-            {/* MONTHLY */}
-
             <div className="dashboard-panel">
-
               <div className="panel-header">
                 <div>
                   <div className="panel-title-row">
-                    <span className="panel-icon">M</span>
+                    <span className="panel-icon" aria-hidden="true">M</span>
                     <h2>Monthly Sales</h2>
                   </div>
                   <p>Monthly sales performance</p>
@@ -908,30 +914,23 @@ function Dashboard() {
               </div>
 
               <div className="analytics-chart">
-
                 {monthlySales.length === 0 ? (
-
                   <div className="dashboard-empty-state">
                     No monthly sales data.
                   </div>
-
                 ) : (
-
                   <ResponsiveContainer width="100%" height="100%">
-
                     <LineChart
                       data={monthlySales}
                       margin={{ top: 10, right: 15, left: 0, bottom: 5 }}
                     >
-
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                      />
                       <XAxis dataKey="month" tickFormatter={formatMonth} />
-
                       <YAxis tickFormatter={(value) => `₹${value}`} />
-
                       <Tooltip content={<SalesTooltip />} />
-
                       <Line
                         type="monotone"
                         dataKey="total"
@@ -941,112 +940,83 @@ function Dashboard() {
                         dot={{ r: 4, fill: COLORS.green }}
                         activeDot={{ r: 6 }}
                       />
-
                     </LineChart>
-
                   </ResponsiveContainer>
-
                 )}
-
               </div>
-
             </div>
-
           </section>
 
-
-          {/* =================================================
-              PRODUCT SALES
-              ================================================= */}
+          {/* PRODUCT SALES */}
 
           <section className="dashboard-panel">
-
             <div className="panel-header">
-
               <div>
                 <div className="panel-title-row">
-                  <span className="panel-icon">P</span>
+                  <span className="panel-icon" aria-hidden="true">P</span>
                   <h2>Product Sales</h2>
                 </div>
                 <p>Sales performance by product</p>
               </div>
 
               <button
+                type="button"
                 className="view-profile-button"
-                onClick={() => navigate("/sales")}
+                onClick={() => navigateTo("/sales")}
               >
                 View Sales
               </button>
-
             </div>
 
             <div className="analytics-chart product-sales-chart">
-
               {productSales.length === 0 ? (
-
                 <div className="dashboard-empty-state">
                   No product sales recorded yet.
                 </div>
-
               ) : (
-
                 <ResponsiveContainer width="100%" height="100%">
-
                   <BarChart
                     data={productSales}
                     margin={{ top: 15, right: 20, left: 5, bottom: 45 }}
                   >
-
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                    />
                     <XAxis
                       dataKey="product_name"
                       angle={-30}
                       textAnchor="end"
                       interval={0}
                     />
-
                     <YAxis />
-
                     <Tooltip />
-
                     <Legend />
-
                     <Bar
                       dataKey="quantity"
                       name="Quantity Sold"
                       fill={COLORS.orange}
                       radius={[4, 4, 0, 0]}
                     />
-
                     <Bar
                       dataKey="total"
                       name="Revenue"
                       fill={COLORS.blue}
                       radius={[4, 4, 0, 0]}
                     />
-
                   </BarChart>
-
                 </ResponsiveContainer>
-
               )}
-
             </div>
-
           </section>
 
-
-          {/* =================================================
-              STOCK TRENDS
-              ================================================= */}
+          {/* STOCK TRENDS */}
 
           <section className="dashboard-panel">
-
             <div className="panel-header">
               <div>
                 <div className="panel-title-row">
-                  <span className="panel-icon">I</span>
+                  <span className="panel-icon" aria-hidden="true">I</span>
                   <h2>Stock Trends</h2>
                 </div>
                 <p>Stock movement for the selected period</p>
@@ -1054,32 +1024,24 @@ function Dashboard() {
             </div>
 
             <div className="analytics-chart">
-
               {stockTrends.length === 0 ? (
-
                 <div className="dashboard-empty-state">
                   No stock movement recorded for this period.
                 </div>
-
               ) : (
-
                 <ResponsiveContainer width="100%" height="100%">
-
                   <LineChart
                     data={stockTrends}
                     margin={{ top: 15, right: 20, left: 5, bottom: 5 }}
                   >
-
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                    />
                     <XAxis dataKey="date" tickFormatter={formatDate} />
-
                     <YAxis />
-
                     <Tooltip />
-
                     <Legend />
-
                     <Line
                       type="monotone"
                       dataKey="stock_in"
@@ -1088,7 +1050,6 @@ function Dashboard() {
                       strokeWidth={3}
                       dot={{ r: 4, fill: COLORS.green }}
                     />
-
                     <Line
                       type="monotone"
                       dataKey="stock_out"
@@ -1097,62 +1058,42 @@ function Dashboard() {
                       strokeWidth={3}
                       dot={{ r: 4, fill: COLORS.red }}
                     />
-
                   </LineChart>
-
                 </ResponsiveContainer>
-
               )}
-
             </div>
-
           </section>
 
-
-          {/* =================================================
-              EXPIRY + DISCOUNT
-              ================================================= */}
+          {/* EXPIRY + DISCOUNT */}
 
           <section className="dashboard-grid dashboard-module8-two-column">
-
-
-            {/* EXPIRY */}
-
             <div className="dashboard-panel">
-
               <div className="panel-header">
-
                 <div>
                   <div className="panel-title-row">
-                    <span className="panel-icon">E</span>
+                    <span className="panel-icon" aria-hidden="true">E</span>
                     <h2>Expiry Overview</h2>
                   </div>
                   <p>Product expiry status</p>
                 </div>
 
                 <button
+                  type="button"
                   className="view-profile-button"
-                  onClick={() => navigate("/expiry")}
+                  onClick={() => navigateTo("/expiry")}
                 >
                   View Expiry
                 </button>
-
               </div>
 
               <div className="analytics-chart expiry-chart-area">
-
                 {expiryTrends.length === 0 ? (
-
                   <div className="dashboard-empty-state">
                     No expiry information available.
                   </div>
-
                 ) : (
-
                   <ResponsiveContainer width="100%" height="100%">
-
                     <PieChart>
-
                       <Pie
                         data={expiryTrends}
                         dataKey="count"
@@ -1163,122 +1104,100 @@ function Dashboard() {
                         innerRadius={42}
                         paddingAngle={3}
                       >
-
                         {expiryTrends.map((entry, index) => (
                           <Cell
-                            key={`expiry-${index}`}
+                            key={`expiry-${entry.status}-${index}`}
                             fill={
                               EXPIRY_COLORS[entry.status] ||
-                              [COLORS.green, COLORS.orange, COLORS.red][
-                                index % 3
-                              ]
+                              [
+                                COLORS.green,
+                                COLORS.orange,
+                                COLORS.red,
+                              ][index % 3]
                             }
                           />
                         ))}
-
                       </Pie>
-
                       <Tooltip />
-
                       <Legend />
-
                     </PieChart>
-
                   </ResponsiveContainer>
-
                 )}
-
               </div>
 
-              <div className="expiry-mini-stats">
-
-                {expiryTrends.map((item) => (
-                  <div className="expiry-mini-stat" key={item.status}>
-                    <span>{item.status}</span>
-                    <strong>{formatNumber(item.count)}</strong>
-                  </div>
-                ))}
-
-              </div>
-
+              {expiryTrends.length > 0 && (
+                <div className="expiry-mini-stats">
+                  {expiryTrends.map((item) => (
+                    <div
+                      className="expiry-mini-stat"
+                      key={item.status}
+                    >
+                      <span>{item.status}</span>
+                      <strong>{formatNumber(item.count)}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-
-            {/* DISCOUNT */}
-
             <div className="dashboard-panel">
-
               <div className="panel-header">
-
                 <div>
                   <div className="panel-title-row">
-                    <span className="panel-icon">%</span>
+                    <span className="panel-icon" aria-hidden="true">%</span>
                     <h2>Discount Usage</h2>
                   </div>
                   <p>Configured product discounts</p>
                 </div>
 
                 <button
+                  type="button"
                   className="view-profile-button"
-                  onClick={() => navigate("/pricing")}
+                  onClick={() => navigateTo("/pricing")}
                 >
                   View Pricing
                 </button>
-
               </div>
 
               <div className="analytics-chart discount-chart">
-
                 {discountUsage.length === 0 ? (
-
                   <div className="dashboard-empty-state">
                     No discounts configured.
                   </div>
-
                 ) : (
-
                   <ResponsiveContainer width="100%" height="100%">
-
                     <BarChart
                       data={discountUsage}
                       margin={{ top: 15, right: 15, left: 0, bottom: 10 }}
                     >
-
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                      />
                       <XAxis
                         dataKey="discount_percentage"
                         tickFormatter={(value) => `${value}%`}
                       />
-
                       <YAxis />
-
                       <Tooltip />
-
                       <Bar
                         dataKey="product_count"
                         name="Products"
                         fill={COLORS.purple}
                         radius={[5, 5, 0, 0]}
                       />
-
                     </BarChart>
-
                   </ResponsiveContainer>
-
                 )}
-
               </div>
 
               {discountUsage.length > 0 && (
                 <div className="discount-list">
-
                   {discountUsage.slice(0, 5).map((item, index) => (
                     <div
                       className="discount-row"
                       key={`${item.discount_percentage}-${index}`}
                     >
-
                       <div>
                         <strong>{item.discount_percentage}%</strong>
                         <span>
@@ -1289,55 +1208,41 @@ function Dashboard() {
                       <span>
                         {formatNumber(item.product_count)} products
                       </span>
-
                     </div>
                   ))}
-
                 </div>
               )}
-
             </div>
-
           </section>
 
-
-          {/* =================================================
-              LOW STOCK TABLE
-              ================================================= */}
+          {/* LOW STOCK TABLE */}
 
           <section className="dashboard-panel dashboard-table-panel">
-
             <div className="panel-header">
-
               <div>
                 <div className="panel-title-row">
-                  <span className="panel-icon">L</span>
+                  <span className="panel-icon" aria-hidden="true">L</span>
                   <h2>Low Stock Items</h2>
                 </div>
                 <p>Products that need stock attention</p>
               </div>
 
               <button
+                type="button"
                 className="view-profile-button"
-                onClick={() => navigate("/inventory")}
+                onClick={() => navigateTo("/inventory")}
               >
                 View Inventory
               </button>
-
             </div>
 
-            {safeArray(dashboard?.tables?.low_stock).length === 0 ? (
-
+            {lowStockItems.length === 0 ? (
               <div className="dashboard-empty-state">
                 No low stock items.
               </div>
-
             ) : (
-
               <div className="dashboard-table-wrapper">
-
                 <table className="dashboard-table">
-
                   <thead>
                     <tr>
                       <th>Product</th>
@@ -1349,77 +1254,55 @@ function Dashboard() {
                   </thead>
 
                   <tbody>
-
-                    {safeArray(dashboard?.tables?.low_stock).map(
-                      (item, index) => (
-                        <tr key={item.id || item.product_id || index}>
-
-                          <td>{item.product_name || item.name || "-"}</td>
-
-                          <td>{item.sku || "-"}</td>
-
-                          <td>{formatNumber(item.quantity)}</td>
-
-                          <td>
-                            {formatNumber(
-                              item.low_stock_threshold ?? item.threshold
-                            )}
-                          </td>
-
-                          <td>Low Stock</td>
-
-                        </tr>
-                      )
-                    )}
-
+                    {lowStockItems.map((item, index) => (
+                      <tr
+                        key={item.id || item.product_id || index}
+                      >
+                        <td>{item.product_name || item.name || "-"}</td>
+                        <td>{item.sku || "-"}</td>
+                        <td>{formatNumber(item.quantity)}</td>
+                        <td>
+                          {formatNumber(
+                            item.low_stock_threshold ?? item.threshold
+                          )}
+                        </td>
+                        <td>Low Stock</td>
+                      </tr>
+                    ))}
                   </tbody>
-
                 </table>
-
               </div>
-
             )}
-
           </section>
 
-
-          {/* =================================================
-              EXPIRING SOON TABLE
-              ================================================= */}
+          {/* EXPIRING SOON TABLE */}
 
           <section className="dashboard-panel dashboard-table-panel">
-
             <div className="panel-header">
-
               <div>
                 <div className="panel-title-row">
-                  <span className="panel-icon">E</span>
+                  <span className="panel-icon" aria-hidden="true">E</span>
                   <h2>Expiring Soon</h2>
                 </div>
                 <p>Products approaching expiry</p>
               </div>
 
               <button
+                type="button"
                 className="view-profile-button"
-                onClick={() => navigate("/expiry")}
+                onClick={() => navigateTo("/expiry")}
               >
                 View Expiry
               </button>
-
             </div>
 
-            {safeArray(dashboard?.tables?.expiring_soon).length === 0 ? (
-
+            {expiringSoonItems.length === 0 ? (
               <div className="dashboard-empty-state">
                 No products are expiring soon.
               </div>
-
             ) : (
-
               <div className="dashboard-table-wrapper">
-
                 <table className="dashboard-table">
-
                   <thead>
                     <tr>
                       <th>Product</th>
@@ -1431,73 +1314,51 @@ function Dashboard() {
                   </thead>
 
                   <tbody>
-
-                    {safeArray(dashboard?.tables?.expiring_soon).map(
-                      (item, index) => (
-                        <tr key={item.id || item.product_id || index}>
-
-                          <td>{item.product_name || item.name || "-"}</td>
-
-                          <td>{item.sku || "-"}</td>
-
-                          <td>{formatDate(item.expiry_date)}</td>
-
-                          <td>{formatNumber(item.days_remaining)}</td>
-
-                          <td>Expiring Soon</td>
-
-                        </tr>
-                      )
-                    )}
-
+                    {expiringSoonItems.map((item, index) => (
+                      <tr
+                        key={item.id || item.product_id || index}
+                      >
+                        <td>{item.product_name || item.name || "-"}</td>
+                        <td>{item.sku || "-"}</td>
+                        <td>{formatDate(item.expiry_date)}</td>
+                        <td>{formatNumber(item.days_remaining)}</td>
+                        <td>Expiring Soon</td>
+                      </tr>
+                    ))}
                   </tbody>
-
                 </table>
-
               </div>
-
             )}
-
           </section>
 
-
-          {/* =================================================
-              RECENT SALES
-              ================================================= */}
+          {/* RECENT SALES */}
 
           <section className="dashboard-panel dashboard-table-panel">
-
             <div className="panel-header">
-
               <div>
                 <div className="panel-title-row">
-                  <span className="panel-icon">₹</span>
+                  <span className="panel-icon" aria-hidden="true">₹</span>
                   <h2>Recent Sales</h2>
                 </div>
                 <p>Latest recorded sales</p>
               </div>
 
               <button
+                type="button"
                 className="view-profile-button"
-                onClick={() => navigate("/sales")}
+                onClick={() => navigateTo("/sales")}
               >
                 View Sales
               </button>
-
             </div>
 
-            {safeArray(dashboard?.tables?.recent_sales).length === 0 ? (
-
+            {recentSales.length === 0 ? (
               <div className="dashboard-empty-state">
                 No recent sales recorded.
               </div>
-
             ) : (
-
               <div className="dashboard-table-wrapper">
-
                 <table className="dashboard-table">
-
                   <thead>
                     <tr>
                       <th>Product</th>
@@ -1509,51 +1370,33 @@ function Dashboard() {
                   </thead>
 
                   <tbody>
-
-                    {safeArray(dashboard?.tables?.recent_sales).map(
-                      (item, index) => (
-                        <tr key={item.id || index}>
-
-                          <td>
-                            {item.product_name || item.product || "-"}
-                          </td>
-
-                          <td>{formatNumber(item.quantity)}</td>
-
-                          <td>{formatCurrency(item.selling_price)}</td>
-
-                          <td>
-                            {formatCurrency(
-                              item.total_amount ?? item.total
-                            )}
-                          </td>
-
-                          <td>
-                            {formatDate(item.sale_date || item.created_at)}
-                          </td>
-
-                        </tr>
-                      )
-                    )}
-
+                    {recentSales.map((item, index) => (
+                      <tr key={item.id || index}>
+                        <td>
+                          {item.product_name || item.product || "-"}
+                        </td>
+                        <td>{formatNumber(item.quantity)}</td>
+                        <td>{formatCurrency(item.selling_price)}</td>
+                        <td>
+                          {formatCurrency(
+                            item.total_amount ?? item.total
+                          )}
+                        </td>
+                        <td>
+                          {formatDate(item.sale_date || item.created_at)}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
-
                 </table>
-
               </div>
-
             )}
-
           </section>
 
-
-          {/* =================================================
-              ACCOUNT BANNER
-              ================================================= */}
+          {/* ACCOUNT BANNER */}
 
           <section className="account-banner">
-
-            <div className="account-avatar">
+            <div className="account-avatar" aria-hidden="true">
               {displayName.charAt(0).toUpperCase()}
             </div>
 
@@ -1568,67 +1411,62 @@ function Dashboard() {
             </div>
 
             <button
+              type="button"
               className="view-profile-button"
-              onClick={() => navigate("/profile")}
+              onClick={() => navigateTo("/profile")}
             >
               View Profile
             </button>
-
           </section>
 
-
-          {/* =================================================
-              RECENT ALERTS
-              ================================================= */}
+          {/* RECENT ALERTS */}
 
           <section className="dashboard-panel">
-
             <div className="panel-header">
-
               <div>
                 <div className="panel-title-row">
-                  <span className="panel-icon">!</span>
+                  <span className="panel-icon" aria-hidden="true">!</span>
                   <h2>Recent Alerts</h2>
                 </div>
-                <p>Stay updated with important inventory notifications.</p>
+                <p>
+                  Stay updated with important inventory notifications.
+                </p>
               </div>
 
               <button
+                type="button"
                 className="view-profile-button"
-                onClick={() => navigate("/alerts")}
+                onClick={() => navigateTo("/alerts")}
               >
                 View All
               </button>
-
             </div>
 
             {alerts.length === 0 ? (
-
               <div className="dashboard-empty-state">
-
                 <div className="chart-placeholder">
-
-                  <div className="chart-circle">✓</div>
-
+                  <div className="chart-circle" aria-hidden="true">✓</div>
                   <h3>No active alerts</h3>
-
-                  <p>Your inventory currently has no important alerts.</p>
-
+                  <p>
+                    Your inventory currently has no important alerts.
+                  </p>
                 </div>
-
               </div>
-
             ) : (
-
               <div className="quick-actions">
-
                 {alerts.slice(0, 5).map((alert, index) => (
-                  <div className="quick-action" key={alert.id || index}>
-
-                    <div className="quick-icon orange-bg">!</div>
+                  <div
+                    className="quick-action"
+                    key={alert.id || index}
+                  >
+                    <div
+                      className="quick-icon orange-bg"
+                      aria-hidden="true"
+                    >
+                      !
+                    </div>
 
                     <div>
-
                       <strong>
                         {alert.title ||
                           alert.message ||
@@ -1643,26 +1481,16 @@ function Dashboard() {
                           ? alert.message
                           : "View inventory alert details"}
                       </span>
-
                     </div>
-
                   </div>
                 ))}
-
               </div>
-
             )}
-
           </section>
-
-
         </div>
-
       </main>
-
     </div>
   );
 }
-
 
 export default Dashboard;

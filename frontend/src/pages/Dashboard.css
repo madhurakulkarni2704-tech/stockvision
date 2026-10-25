@@ -1537,8 +1537,9 @@ line {
 }
 
 
+
 /* =========================================================
-   RESPONSIVE
+   RESPONSIVE LAYOUT + MOBILE SIDEBAR
    ========================================================= */
 
 @media (max-width: 1250px) {
@@ -1556,11 +1557,9 @@ line {
   }
 
   .dashboard-stats {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-
 
 @media (max-width: 950px) {
   .dashboard-sidebar {
@@ -1580,37 +1579,60 @@ line {
     padding: 20px;
   }
 
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
+  .dashboard-grid,
   .dashboard-module8-two-column {
     grid-template-columns: 1fr;
   }
 
-  .header-user-info {
-    display: none;
-  }
-
+  .header-user-info,
   .header-arrow {
     display: none;
   }
 }
 
-
+/* Mobile navigation */
 @media (max-width: 720px) {
-  .dashboard-sidebar {
-    position: static;
-
-    width: 100%;
-    height: auto;
-
-    border-right: 0;
-    border-bottom: 1px solid #e8eaf0;
-  }
-
   .dashboard-page {
     display: block;
+    min-height: 100vh;
+  }
+
+  .dashboard-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+
+    width: min(290px, 85vw);
+    height: 100dvh;
+
+    padding: 22px 16px;
+
+    border-right: 1px solid #e8eaf0;
+    border-bottom: 0;
+    border-radius: 0 18px 18px 0;
+
+    overflow-y: auto;
+    overscroll-behavior: contain;
+
+    background: #fff;
+    box-shadow: 12px 0 40px rgba(26, 32, 50, 0.12);
+
+    transform: translateX(-110%);
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+      transform 0.25s ease,
+      visibility 0.25s ease;
+
+    z-index: 200;
+  }
+
+  .dashboard-sidebar.sidebar-open {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .dashboard-main {
@@ -1618,41 +1640,54 @@ line {
     margin-left: 0;
   }
 
-  .sidebar-navigation {
-    display: grid;
-
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-
-    gap: 5px;
-  }
-
-  .sidebar-promo {
-    display: none;
-  }
-
-  .sidebar-divider {
-    margin: 14px 8px;
-  }
-
   .dashboard-header {
-    position: static;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 
     min-height: 62px;
-
     padding: 0 15px;
+
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
   }
 
   .menu-button {
     display: flex;
+    flex-shrink: 0;
+
+    width: 38px;
+    height: 38px;
+
+    font-size: 19px;
+  }
+
+  .menu-button:hover {
+    background: #eeeafe;
+    color: #6657d9;
+  }
+
+  .header-left {
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .header-left strong {
+    font-size: 14px;
   }
 
   .header-right {
-    gap: 8px;
+    gap: 6px;
   }
 
-  .header-divider {
+  .header-divider,
+  .header-user-info,
+  .header-arrow {
     display: none;
+  }
+
+  .header-logout {
+    padding: 8px;
   }
 
   .header-logout span {
@@ -1660,21 +1695,54 @@ line {
   }
 
   .dashboard-content {
-    padding: 18px 15px;
+    padding: 22px 16px;
   }
 
   .dashboard-welcome {
     align-items: flex-start;
     flex-direction: column;
+    gap: 14px;
+  }
+
+  .dashboard-welcome h1 {
+    font-size: clamp(25px, 6vw, 32px);
   }
 
   .dashboard-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .stat-card {
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .stat-card h2 {
+    font-size: 18px;
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-grid,
+  .dashboard-module8-two-column {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .dashboard-panel {
+    padding: 18px;
+    margin-bottom: 16px;
   }
 
   .dashboard-filter-content {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
+    gap: 14px;
   }
 
   .dashboard-filter-control {
@@ -1683,24 +1751,7 @@ line {
 
   .dashboard-filter-control select {
     width: 100%;
-  }
-
-  .account-banner {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .account-info {
-    width: calc(100% - 60px);
-  }
-
-  .account-role {
-    margin-left: 58px;
-    margin-right: 0;
-  }
-
-  .account-banner .view-profile-button {
-    margin-left: auto;
+    min-width: 0;
   }
 
   .analytics-chart {
@@ -1712,34 +1763,74 @@ line {
     height: 300px;
     min-height: 300px;
   }
+
+  .product-sales-chart {
+    height: 290px;
+    min-height: 290px;
+  }
+
+  .discount-chart {
+    height: 240px;
+    min-height: 240px;
+  }
+
+  .dashboard-table-wrapper {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .account-banner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .account-info {
+    flex: 1;
+    width: auto;
+  }
+
+  .account-role {
+    margin-left: 58px;
+    margin-right: 0;
+    text-align: left;
+  }
+
+  .sidebar-promo {
+    display: block;
+  }
+
+  .sidebar-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .sidebar-divider {
+    margin: 18px 8px;
+  }
 }
 
-
 @media (max-width: 480px) {
-  .sidebar-navigation {
-    grid-template-columns: 1fr;
+  .dashboard-content {
+    padding: 18px 12px;
   }
 
   .dashboard-header {
     padding: 0 12px;
   }
 
-  .dashboard-content {
-    padding: 15px 12px;
-  }
-
   .dashboard-panel {
-    padding: 16px;
+    padding: 15px;
     border-radius: 12px;
   }
 
-  .dashboard-welcome h1 {
-    font-size: 25px;
+  .dashboard-stats {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .panel-header {
     align-items: flex-start;
     flex-direction: column;
+    gap: 12px;
   }
 
   .panel-header .view-profile-button {
@@ -1757,13 +1848,12 @@ line {
   }
 
   .expiry-mini-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .account-role {
     width: 100%;
     margin-left: 58px;
-    text-align: left;
   }
 
   .account-banner .view-profile-button {
@@ -1772,5 +1862,32 @@ line {
 
   .dashboard-table {
     min-width: 500px;
+  }
+}
+
+/* Respect reduced-motion accessibility settings */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-sidebar,
+  .stat-card,
+  .sidebar-nav-item {
+    transition: none;
+  }
+}
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgba(15, 23, 42, 0.45);
+    cursor: pointer;
   }
 }

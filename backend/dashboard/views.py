@@ -1,5 +1,7 @@
 
-from datetime import date, timedelta
+from datetime import timedelta
+
+from django.utils import timezone
 
 from django.db.models import F, Q, Sum
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
@@ -21,7 +23,7 @@ class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        today = date.today()
+        today = timezone.localdate()
 
         # =========================================================
         # DASHBOARD ANALYTICS FILTER
